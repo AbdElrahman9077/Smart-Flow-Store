@@ -394,4 +394,60 @@ button {
   .whatsapp-btn {
     margin-top: 10px;
   }
+}body {
+  background-color: #f3f6fb;
+  color: #0f172a;
+}
+
+.navbar {
+  background-color: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+.logo a {
+  color: #2563eb;
+  font-weight: 800;
+}
+
+.nav-links a {
+  color: #0f172a;
+  font-weight: 600;
+  transition: 0.2s;
+}
+
+.nav-links a:hover {
+  color: #2563eb;
+}
+
+.product-card,
+.details-box,
+.checkout-box,
+.order-card {
+  border: 1px solid #e5e7eb;
+}
+
+.primary-link-btn,
+.primary-btn {
+  background-color: #2563eb;
+}
+
+.primary-link-btn:hover,
+.primary-btn:hover {
+  background-color: #1d4ed8;
+}.auth-box {
+  max-width: 500px;
+}
+
+.nav-text-btn {
+  background: none;
+  border: none;
+  color: #0f172a;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.nav-text-btn:hover {
+  color: #2563eb;
 }

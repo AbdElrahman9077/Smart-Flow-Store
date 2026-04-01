@@ -1,7 +1,8 @@
 import { Link } from "react-router-dom";
-
+import PageWrapper from "../components/PageWrapper";
 function OrderSuccess() {
   return (
+    <PageWrapper>
     <div className="container page-section">
       <div className="details-box success-box">
         <h1>Order Submitted Successfully</h1>
@@ -23,6 +24,7 @@ function OrderSuccess() {
         </div>
       </div>
     </div>
+ </PageWrapper>
   );
 }
 

@@ -1,5 +1,9 @@
+import PageWrapper from "../components/PageWrapper";
 function ContactPage() {
   return (
+    <PageWrapper>
+
+   
     <div className="container page-section">
       <div className="details-box">
         <h1>Contact Us</h1>
@@ -26,6 +30,7 @@ function ContactPage() {
         </div>
       </div>
     </div>
+   </PageWrapper>
   );
 }
 

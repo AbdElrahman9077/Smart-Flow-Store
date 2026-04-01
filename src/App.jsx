@@ -11,9 +11,12 @@ import AboutPage from "./pages/AboutPage";
 import ContactPage from "./pages/ContactPage";
 import OrderSuccess from "./pages/OrderSuccess";
 import OrdersPage from "./pages/OrdersPage";
-
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import PageWrapper from "./components/PageWrapper";
 function HomePage() {
   return (
+    
     <>
       <Hero />
       <main>
@@ -26,24 +29,28 @@ function HomePage() {
 
 function App() {
   return (
+    <PageWrapper>
     <BrowserRouter>
       <div className="app">
         <Navbar />
 
         <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/products" element={<ProductsPage />} />
-          <Route path="/about" element={<AboutPage />} />
-          <Route path="/contact" element={<ContactPage />} />
-          <Route path="/product/:id" element={<ProductDetails />} />
-          <Route path="/checkout/:id" element={<Checkout />} />
-          <Route path="/order-success" element={<OrderSuccess />} />
-          <Route path="/orders" element={<OrdersPage />} />
-        </Routes>
+  <Route path="/" element={<HomePage />} />
+  <Route path="/products" element={<ProductsPage />} />
+  <Route path="/about" element={<AboutPage />} />
+  <Route path="/contact" element={<ContactPage />} />
+  <Route path="/login" element={<Login />} />
+  <Route path="/register" element={<Register />} />
+  <Route path="/product/:id" element={<ProductDetails />} />
+  <Route path="/checkout/:id" element={<Checkout />} />
+  <Route path="/order-success" element={<OrderSuccess />} />
+  <Route path="/orders" element={<OrdersPage />} />
+</Routes>
 
         <Footer />
       </div>
     </BrowserRouter>
+  </PageWrapper>
   );
 }
 

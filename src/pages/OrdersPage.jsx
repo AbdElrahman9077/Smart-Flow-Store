@@ -1,8 +1,10 @@
+import PageWrapper from "../components/PageWrapper";
 function OrdersPage() {
   const savedOrders = JSON.parse(localStorage.getItem("orders")) || [];
 
   return (
-    <div className="container page-section">
+<PageWrapper>
+<div className="container page-section">
       <h1 className="page-title">Orders</h1>
 
       {savedOrders.length === 0 ? (
@@ -34,6 +36,7 @@ function OrdersPage() {
         </div>
       )}
     </div>
+  </PageWrapper>
   );
 }
 
