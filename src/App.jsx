@@ -15,6 +15,8 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import PageWrapper from "./components/PageWrapper";
 import MyOrders from "./pages/MyOrders";
+import CustomRequest from "./pages/CustomRequest";
+import AdminOrders from "./pages/AdminOrders";
 function HomePage() {
   return (
     
@@ -43,6 +45,8 @@ function App() {
   <Route path="/login" element={<Login />} />
   <Route path="/register" element={<Register />} />
   <Route path="/my-orders" element={<MyOrders />} />
+  <Route path="/custom-request" element={<CustomRequest />} />
+  <Route path="/admin-orders" element={<AdminOrders />} />
   <Route path="/product/:id" element={<ProductDetails />} />
   <Route path="/checkout/:id" element={<Checkout />} />
   <Route path="/order-success" element={<OrderSuccess />} />

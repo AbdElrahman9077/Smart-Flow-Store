@@ -1,6 +1,7 @@
 import { useParams, Link } from "react-router-dom";
 import products from "../data/products";
 import PageWrapper from "../components/PageWrapper";
+
 function ProductDetails() {
   const { id } = useParams();
 
@@ -8,29 +9,34 @@ function ProductDetails() {
 
   if (!product) {
     return (
-     
-      <div className="container page-section">
-        <h2>Product not found</h2>
-      </div>
+      <PageWrapper>
+        <div className="container page-section">
+          <h2>Product not found</h2>
+        </div>
+      </PageWrapper>
     );
   }
 
   return (
-     <PageWrapper>
-    <div className="container page-section">
-      <div className="details-box">
-        <h1>{product.title}</h1>
-        <p className="details-description">{product.description}</p>
-        <h3 className="details-price">
-          Price: {product.price} {product.currency}
-        </h3>
+    <PageWrapper>
+      <div className="container page-section">
+        <div className="details-box">
+          {product.image && (
+            <img src={product.image} alt={product.title} className="details-image" />
+          )}
 
-        <Link to={`/checkout/${product.id}`} className="primary-link-btn">
-          Buy Now
-        </Link>
+          <h1>{product.title}</h1>
+          <p className="details-description">{product.description}</p>
+          <h3 className="details-price">
+            Price: {product.price} {product.currency}
+          </h3>
+
+          <Link to={`/checkout/${product.id}`} className="primary-link-btn">
+            Buy Now
+          </Link>
+        </div>
       </div>
-    </div>
-  </PageWrapper>
+    </PageWrapper>
   );
 }
 

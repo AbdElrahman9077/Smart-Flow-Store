@@ -2,41 +2,56 @@ import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import PageWrapper from "../components/PageWrapper";
 
-function OrdersPage() {
+function AdminOrders() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  async function fetchOrders() {
+    const { data, error } = await supabase
+      .from("orders")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Fetch admin orders error:", error);
+    } else {
+      setOrders(data || []);
+    }
+
+    setLoading(false);
+  }
+
   useEffect(() => {
-    async function fetchOrders() {
-      const { data, error } = await supabase
-        .from("orders")
-        .select("*")
-        .order("created_at", { ascending: false });
+    fetchOrders();
+  }, []);
 
-      if (error) {
-        console.error("Fetch orders error:", error);
-      } else {
-        setOrders(data || []);
-      }
+  async function handleStatusChange(orderId, newStatus) {
+    const { error } = await supabase
+      .from("orders")
+      .update({ status: newStatus })
+      .eq("id", orderId);
 
-      setLoading(false);
+    if (error) {
+      console.error("Update status error:", error);
+      alert(`Failed to update status: ${error.message}`);
+      return;
     }
 
     fetchOrders();
-  }, []);
+  }
 
   return (
     <PageWrapper>
       <div className="container page-section">
-        <h1 className="page-title">Orders</h1>
+        <h1 className="page-title">Admin Orders</h1>
 
         {loading ? (
           <div className="details-box">
-            <p className="details-description">Loading orders...</p>
+            <p className="details-description">Loading admin orders...</p>
           </div>
         ) : orders.length === 0 ? (
           <div className="details-box">
-            <p className="details-description">No orders submitted yet.</p>
+            <p className="details-description">No orders found.</p>
           </div>
         ) : (
           <div className="orders-grid">
@@ -64,6 +79,21 @@ function OrdersPage() {
                     <img src={order.proof_file_url} alt="Payment proof" />
                   </div>
                 )}
+
+                <div className="status-actions">
+                  <button onClick={() => handleStatusChange(order.id, "Pending Review")}>
+                    Pending
+                  </button>
+                  <button onClick={() => handleStatusChange(order.id, "Confirmed")}>
+                    Confirm
+                  </button>
+                  <button onClick={() => handleStatusChange(order.id, "Rejected")}>
+                    Reject
+                  </button>
+                  <button onClick={() => handleStatusChange(order.id, "Delivered")}>
+                    Deliver
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -73,4 +103,4 @@ function OrdersPage() {
   );
 }
 
-export default OrdersPage;
+export default AdminOrders;

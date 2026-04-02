@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 function Hero() {
   return (
     <header className="hero">
@@ -7,13 +9,17 @@ function Hero() {
           Sell Excel systems, sheets, dashboards, and custom business tools.
         </p>
         <p className="description">
-          منصة متخصصة في بيع وتصميم ملفات Excel لرواد الأعمال والنشاطات باستخدام 
-          Excel VBA 
+          منصة متخصصة لعرض وبيع أنظمة Excel وشيتات Excel الجاهزة
+          مع إمكانية طلب التخصيص والتعديل بشكل احترافي ومنظم.
         </p>
 
         <div className="hero-buttons">
-          <button>Browse Products</button>
-          <button className="secondary">Request Custom Work</button>
+          <Link to="/products" className="hero-link-btn">
+            Browse Products
+          </Link>
+          <Link to="/custom-request" className="hero-link-btn secondary">
+            Request Custom Work
+          </Link>
         </div>
       </div>
     </header>

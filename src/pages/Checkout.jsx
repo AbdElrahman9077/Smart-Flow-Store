@@ -4,6 +4,7 @@ import { useState } from "react";
 import products from "../data/products";
 import { supabase } from "../lib/supabase";
 import { getCurrentUser } from "../lib/auth";
+
 function Checkout() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -16,9 +17,9 @@ function Checkout() {
     phone: "",
     paymentMethod: "Vodafone Cash",
     notes: "",
-    proofFileName: "",
   });
 
+  const [proofFile, setProofFile] = useState(null);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
 
@@ -43,11 +44,7 @@ function Checkout() {
 
   function handleFileChange(event) {
     const file = event.target.files[0];
-
-    setFormData((prev) => ({
-      ...prev,
-      proofFileName: file ? file.name : "",
-    }));
+    setProofFile(file || null);
   }
 
   function validateForm() {
@@ -67,59 +64,84 @@ function Checkout() {
       newErrors.phone = "Phone number is required";
     }
 
-    if (!formData.proofFileName.trim()) {
-      newErrors.proofFileName = "Payment proof is required";
+    if (!proofFile) {
+      newErrors.proofFile = "Payment proof is required";
     }
 
     return newErrors;
   }
 
-async function handleSubmit(event) {
-  event.preventDefault();
+  async function handleSubmit(event) {
+    event.preventDefault();
 
-  const validationErrors = validateForm();
-  setErrors(validationErrors);
+    const validationErrors = validateForm();
+    setErrors(validationErrors);
 
-  if (Object.keys(validationErrors).length > 0) return;
+    if (Object.keys(validationErrors).length > 0) return;
 
-  setSubmitting(true);
+    setSubmitting(true);
 
-  const currentUser = await getCurrentUser();
+    const currentUser = await getCurrentUser();
 
-  if (!currentUser) {
+    if (!currentUser) {
+      setSubmitting(false);
+      alert("Please login first before placing an order.");
+      navigate("/login");
+      return;
+    }
+
+    let uploadedProofUrl = "";
+
+    if (proofFile) {
+      const fileExt = proofFile.name.split(".").pop();
+      const fileName = `${currentUser.id}-${Date.now()}.${fileExt}`;
+      const filePath = fileName;
+
+      const { error: uploadError } = await supabase.storage
+        .from("payment-proofs")
+        .upload(filePath, proofFile);
+
+      if (uploadError) {
+        setSubmitting(false);
+        alert(`Proof upload failed: ${uploadError.message}`);
+        return;
+      }
+
+      const { data: publicUrlData } = supabase.storage
+        .from("payment-proofs")
+        .getPublicUrl(filePath);
+
+      uploadedProofUrl = publicUrlData.publicUrl;
+    }
+
+    const { error } = await supabase.from("orders").insert([
+      {
+        user_id: currentUser.id,
+        product_id: product.id,
+        product_title: product.title,
+        product_price: product.price,
+        currency: product.currency,
+        customer_full_name: formData.fullName,
+        customer_email: formData.email,
+        customer_phone: formData.phone,
+        payment_method: formData.paymentMethod,
+        proof_file_name: proofFile ? proofFile.name : null,
+        proof_file_url: uploadedProofUrl,
+        notes: formData.notes,
+        status: "Pending Review",
+      },
+    ]);
+
     setSubmitting(false);
-    alert("Please login first before placing an order.");
-    navigate("/login");
-    return;
+
+    if (error) {
+      console.error("Supabase insert error:", error);
+      alert(`There was an error saving the order: ${error.message}`);
+      return;
+    }
+
+    navigate("/order-success");
   }
-
-  const { error } = await supabase.from("orders").insert([
-    {
-      user_id: currentUser.id,
-      product_id: product.id,
-      product_title: product.title,
-      product_price: product.price,
-      currency: product.currency,
-      customer_full_name: formData.fullName,
-      customer_email: formData.email,
-      customer_phone: formData.phone,
-      payment_method: formData.paymentMethod,
-      proof_file_name: formData.proofFileName,
-      notes: formData.notes,
-      status: "Pending Review",
-    },
-  ]);
-
-  setSubmitting(false);
-
-  if (error) {
-    console.error("Supabase insert error:", error);
-    alert("There was an error saving the order.");
-    return;
-  }
-
-  navigate("/order-success");
-}
 
   return (
     <PageWrapper>
@@ -212,11 +234,9 @@ async function handleSubmit(event) {
                 accept="image/*,.pdf"
                 onChange={handleFileChange}
               />
-              {formData.proofFileName && (
-                <small>Selected file: {formData.proofFileName}</small>
-              )}
-              {errors.proofFileName && (
-                <small className="error-text">{errors.proofFileName}</small>
+              {proofFile && <small>Selected file: {proofFile.name}</small>}
+              {errors.proofFile && (
+                <small className="error-text">{errors.proofFile}</small>
               )}
             </div>
 
