@@ -44,35 +44,45 @@ function Navbar() {
             </li>
           )}
 
-          {!loading && isAdmin && (
-            <>
-              <li>
-                <Link to="/admin-dashboard">
-                  {t.adminDashboard || "Admin Dashboard"}
-                </Link>
-              </li>
-              <li>
-                <Link to="/admin-products">
-                  {t.adminProducts || "Admin Products"}
-                </Link>
-              </li>
-              <li>
-                <Link to="/admin-orders">
-                  {t.adminOrders || "Admin Orders"}
-                </Link>
-              </li>
-              <li>
-                <Link to="/admin-users">
-                  {t.adminUsers || "Admin Users"}
-                </Link>
-              </li>
-              <li>
-                <Link to="/admin-custom-requests">
-                  {t.adminCustomRequests || "Custom Requests"}
-                </Link>
-              </li>
-            </>
-          )}
+        {!loading && isAdmin && (
+  <>
+    <li>
+      <Link to="/admin-dashboard">
+        {t.adminDashboard || "Admin Dashboard"}
+      </Link>
+    </li>
+
+    <li>
+      <Link to="/admin-products">
+        {t.adminProducts || "Admin Products"}
+      </Link>
+    </li>
+
+    <li>
+      <Link to="/admin-orders">
+        {t.adminOrders || "Admin Orders"}
+      </Link>
+    </li>
+
+    <li>
+      <Link to="/admin-users">
+        {t.adminUsers || "Admin Users"}
+      </Link>
+    </li>
+
+    <li>
+      <Link to="/admin-custom-requests">
+        {t.adminCustomRequests || "Custom Requests"}
+      </Link>
+    </li>
+
+    <li>
+      <Link to="/admin-logs">
+        {t.adminLogs || "Admin Logs"}
+      </Link>
+    </li>
+  </>
+)}
 
           {!user && (
             <li>

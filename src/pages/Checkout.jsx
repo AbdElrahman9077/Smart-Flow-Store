@@ -5,6 +5,11 @@ import { supabase } from "../lib/supabase";
 import { getCurrentUser } from "../lib/auth";
 import { useToast } from "../context/ToastContext";
 import { useAppContext } from "../context/AppContext";
+import {
+  sendAdminNotification,
+  sendCustomerEmail,
+  createAuditLog,
+} from "../lib/notifications";
 
 function Checkout() {
   const { id } = useParams();
@@ -163,25 +168,29 @@ function Checkout() {
       uploadedProofUrl = publicUrlData?.publicUrl || "";
     }
 
-    const { error } = await supabase.from("orders").insert([
-      {
-        user_id: currentUser.id,
-        product_id: product.id,
-        product_title: product.title,
-        product_price: product.price,
-        currency: product.currency,
-        customer_full_name: formData.fullName,
-        customer_email: formData.email,
-        customer_phone: formData.phone,
-        payment_method: formData.paymentMethod,
-        proof_file_name: proofFile ? proofFile.name : null,
-        proof_file_url: uploadedProofUrl,
-        proof_file_path: uploadedProofPath,
-        notes: formData.notes,
-        status: "pending",
-        download_enabled: false,
-      },
-    ]);
+    const { data: insertedOrder, error } = await supabase
+      .from("orders")
+      .insert([
+        {
+          user_id: currentUser.id,
+          product_id: product.id,
+          product_title: product.title,
+          product_price: product.price,
+          currency: product.currency,
+          customer_full_name: formData.fullName,
+          customer_email: formData.email,
+          customer_phone: formData.phone,
+          payment_method: formData.paymentMethod,
+          proof_file_name: proofFile ? proofFile.name : null,
+          proof_file_url: uploadedProofUrl,
+          proof_file_path: uploadedProofPath,
+          notes: formData.notes,
+          status: "pending",
+          download_enabled: false,
+        },
+      ])
+      .select()
+      .single();
 
     setSubmitting(false);
 
@@ -193,6 +202,47 @@ function Checkout() {
       );
       return;
     }
+
+    await createAuditLog({
+      action: "order_created",
+      entityType: "order",
+      entityId: insertedOrder?.id || `${currentUser.id}-${product.id}`,
+      description: `New order created for ${product.title || "Product"}`,
+      metadata: {
+        productId: product.id,
+        productTitle: product.title,
+        customerEmail: formData.email,
+        paymentMethod: formData.paymentMethod,
+      },
+    });
+
+    await sendAdminNotification({
+      subject: "Smart Flow - New Order Received",
+      html: `
+        <div>
+          <h2>New Order Received</h2>
+          <p>Order ID: ${insertedOrder?.id || "-"}</p>
+          <p>Product: ${product.title}</p>
+          <p>Price: ${product.price} ${product.currency}</p>
+          <p>Customer: ${formData.fullName}</p>
+          <p>Email: ${formData.email}</p>
+          <p>Phone: ${formData.phone}</p>
+          <p>Payment Method: ${formData.paymentMethod}</p>
+        </div>
+      `,
+    });
+
+    await sendCustomerEmail({
+      to: formData.email,
+      subject: "Smart Flow - Order Received",
+      html: `
+        <div>
+          <h2>Your order has been received</h2>
+          <p>Product: ${product.title}</p>
+          <p>We will review your payment proof and update your order soon.</p>
+        </div>
+      `,
+    });
 
     showToast(tx("Order submitted successfully.", "تم إرسال الطلب بنجاح."));
     navigate("/order-success");

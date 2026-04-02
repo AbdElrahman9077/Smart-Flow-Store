@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
-
+import AdminLogs from "./pages/AdminLogs";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import AdminRoute from "./components/AdminRoute";
@@ -60,6 +60,14 @@ function AnimatedRoutes() {
 <Route path="/verify-otp" element={<VerifyOtp />} />
 <Route path="/forgot-password" element={<ForgotPassword />} />
 <Route path="/reset-password" element={<ResetPassword />} />
+<Route
+  path="/admin-logs"
+  element={
+    <AdminRoute>
+      <AdminLogs />
+    </AdminRoute>
+  }
+/>
         <Route
           path="/orders"
           element={

@@ -5,6 +5,11 @@ import { getCurrentUser } from "../lib/auth";
 import PageWrapper from "../components/PageWrapper";
 import { useToast } from "../context/ToastContext";
 import { useAppContext } from "../context/AppContext";
+import {
+  sendAdminNotification,
+  sendCustomerEmail,
+  createAuditLog,
+} from "../lib/notifications";
 
 function CustomRequest() {
   const navigate = useNavigate();
@@ -104,18 +109,22 @@ function CustomRequest() {
       return;
     }
 
-    const { error } = await supabase.from("custom_requests").insert([
-      {
-        user_id: currentUser.id,
-        full_name: formData.fullName,
-        email: formData.email,
-        phone: formData.phone,
-        request_title: formData.requestTitle,
-        request_description: formData.requestDescription,
-        budget: formData.budget,
-        status: "pending",
-      },
-    ]);
+    const { data: insertedRequest, error } = await supabase
+      .from("custom_requests")
+      .insert([
+        {
+          user_id: currentUser.id,
+          full_name: formData.fullName,
+          email: formData.email,
+          phone: formData.phone,
+          request_title: formData.requestTitle,
+          request_description: formData.requestDescription,
+          budget: formData.budget,
+          status: "pending",
+        },
+      ])
+      .select()
+      .single();
 
     setSubmitting(false);
 
@@ -127,6 +136,46 @@ function CustomRequest() {
       );
       return;
     }
+
+    await createAuditLog({
+      action: "custom_request_created",
+      entityType: "custom_request",
+      entityId: insertedRequest?.id || `${currentUser.id}-${Date.now()}`,
+      description: `New custom request created: ${formData.requestTitle}`,
+      metadata: {
+        requestTitle: formData.requestTitle,
+        customerEmail: formData.email,
+        budget: formData.budget,
+      },
+    });
+
+    await sendAdminNotification({
+      subject: "Smart Flow - New Custom Request",
+      html: `
+        <div>
+          <h2>New Custom Request</h2>
+          <p>Request ID: ${insertedRequest?.id || "-"}</p>
+          <p>Title: ${formData.requestTitle}</p>
+          <p>Customer: ${formData.fullName}</p>
+          <p>Email: ${formData.email}</p>
+          <p>Phone: ${formData.phone || "-"}</p>
+          <p>Budget: ${formData.budget || "-"}</p>
+          <p>Description: ${formData.requestDescription}</p>
+        </div>
+      `,
+    });
+
+    await sendCustomerEmail({
+      to: formData.email,
+      subject: "Smart Flow - Custom Request Received",
+      html: `
+        <div>
+          <h2>Your custom request has been received</h2>
+          <p>Title: ${formData.requestTitle}</p>
+          <p>We will review your request and contact you soon.</p>
+        </div>
+      `,
+    });
 
     showToast(tx("Custom request submitted successfully.", "تم إرسال الطلب المخصص بنجاح."));
     navigate("/");

@@ -3,6 +3,11 @@ import { supabase } from "../lib/supabase";
 import PageWrapper from "../components/PageWrapper";
 import { useToast } from "../context/ToastContext";
 import { useAppContext } from "../context/AppContext";
+import {
+  sendAdminNotification,
+  sendCustomerEmail,
+  createAuditLog,
+} from "../lib/notifications";
 
 function AdminOrders() {
   const [orders, setOrders] = useState([]);
@@ -96,6 +101,51 @@ function AdminOrders() {
         "error"
       );
       return;
+    }
+
+    await createAuditLog({
+      action: "order_status_changed",
+      entityType: "order",
+      entityId: order.id,
+      description: `Order #${order.id} changed to ${normalized}`,
+      metadata: {
+        orderId: order.id,
+        status: normalized,
+        customerEmail: order.customer_email || null,
+        productTitle: order.product_title || null,
+      },
+    });
+
+    await sendAdminNotification({
+      subject: `Smart Flow - Order #${order.id} updated`,
+      html: `
+        <div>
+          <h2>Order Updated</h2>
+          <p>Order ID: ${order.id}</p>
+          <p>Product: ${order.product_title || "-"}</p>
+          <p>Customer: ${order.customer_full_name || "-"}</p>
+          <p>Status: ${normalized}</p>
+        </div>
+      `,
+    });
+
+    if (order.customer_email) {
+      await sendCustomerEmail({
+        to: order.customer_email,
+        subject: "Smart Flow - Order Status Updated",
+        html: `
+          <div>
+            <h2>Your order status has been updated</h2>
+            <p>Product: ${order.product_title || "-"}</p>
+            <p>New status: ${normalized}</p>
+            ${
+              normalized === "confirmed" || normalized === "delivered"
+                ? "<p>Your product is now available in My Orders for download.</p>"
+                : ""
+            }
+          </div>
+        `,
+      });
     }
 
     showToast(tx("Order status updated successfully.", "تم تحديث حالة الطلب بنجاح."));
