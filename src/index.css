@@ -516,4 +516,63 @@ button {
   background-color: transparent;
   border: 2px solid white;
   color: white;
+}.light-theme {
+  background-color: #f3f6fb;
+  color: #0f172a;
+}
+
+.dark-theme {
+  background-color: #0f172a;
+  color: #f8fafc;
+}
+
+.dark-theme .navbar,
+.dark-theme .product-card,
+.dark-theme .details-box,
+.dark-theme .checkout-box,
+.dark-theme .order-card {
+  background-color: #111827;
+  color: #f8fafc;
+  border-color: #374151;
+}
+
+.dark-theme .nav-links a,
+.dark-theme .logo a,
+.dark-theme .nav-text-btn,
+.dark-theme .details-description,
+.dark-theme .product-card p,
+.dark-theme .order-card p,
+.dark-theme .checkout-text,
+.dark-theme .checkout-product p {
+  color: #f8fafc;
+}
+
+.dark-theme .form-group input,
+.dark-theme .form-group select,
+.dark-theme .form-group textarea {
+  background-color: #1f2937;
+  color: #f8fafc;
+  border-color: #374151;
+}
+
+.nav-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.small-toggle-btn {
+  background-color: #e5e7eb;
+  color: #111827;
+  border: none;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.small-toggle-btn:hover {
+  background-color: #dbeafe;
+  color: #1d4ed8;
 }
