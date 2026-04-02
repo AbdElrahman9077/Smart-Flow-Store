@@ -10,8 +10,10 @@ function AdminRoute({ children }) {
   useEffect(() => {
     async function checkAdmin() {
       const user = await getCurrentUser();
+      console.log("CURRENT USER:", user);
 
       if (!user) {
+        console.log("NO USER FOUND");
         setLoading(false);
         setIsAdmin(false);
         return;
@@ -19,9 +21,12 @@ function AdminRoute({ children }) {
 
       const { data, error } = await supabase
         .from("profiles")
-        .select("is_admin")
+        .select("is_admin, email")
         .eq("id", user.id)
         .single();
+
+      console.log("PROFILE DATA:", data);
+      console.log("PROFILE ERROR:", error);
 
       if (!error && data?.is_admin) {
         setIsAdmin(true);
