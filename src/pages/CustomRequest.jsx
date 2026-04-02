@@ -1,11 +1,15 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { getCurrentUser } from "../lib/auth";
 import PageWrapper from "../components/PageWrapper";
+import { useToast } from "../context/ToastContext";
+import { useAppContext } from "../context/AppContext";
 
 function CustomRequest() {
   const navigate = useNavigate();
+  const { showToast } = useToast();
+  const { tx } = useAppContext();
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -19,6 +23,34 @@ function CustomRequest() {
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
 
+  useEffect(() => {
+    async function preloadUserData() {
+      const currentUser = await getCurrentUser();
+
+      if (!currentUser) return;
+
+      setFormData((prev) => ({
+        ...prev,
+        email: currentUser.email || prev.email,
+      }));
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("id", currentUser.id)
+        .single();
+
+      if (profile?.full_name) {
+        setFormData((prev) => ({
+          ...prev,
+          fullName: profile.full_name,
+        }));
+      }
+    }
+
+    preloadUserData();
+  }, []);
+
   function handleChange(e) {
     const { name, value } = e.target;
 
@@ -31,11 +63,20 @@ function CustomRequest() {
   function validateForm() {
     const newErrors = {};
 
-    if (!formData.fullName.trim()) newErrors.fullName = "Full name is required";
-    if (!formData.email.trim()) newErrors.email = "Email is required";
-    if (!formData.requestTitle.trim()) newErrors.requestTitle = "Request title is required";
+    if (!formData.fullName.trim()) {
+      newErrors.fullName = tx("Full name is required", "الاسم الكامل مطلوب");
+    }
+
+    if (!formData.email.trim()) {
+      newErrors.email = tx("Email is required", "البريد الإلكتروني مطلوب");
+    }
+
+    if (!formData.requestTitle.trim()) {
+      newErrors.requestTitle = tx("Request title is required", "عنوان الطلب مطلوب");
+    }
+
     if (!formData.requestDescription.trim()) {
-      newErrors.requestDescription = "Request description is required";
+      newErrors.requestDescription = tx("Request description is required", "وصف الطلب مطلوب");
     }
 
     return newErrors;
@@ -55,7 +96,10 @@ function CustomRequest() {
 
     if (!currentUser) {
       setSubmitting(false);
-      alert("Please login first before submitting a custom request.");
+      showToast(
+        tx("Please login first before submitting a custom request.", "سجل دخول أولًا قبل إرسال طلب مخصص."),
+        "error"
+      );
       navigate("/login");
       return;
     }
@@ -69,7 +113,7 @@ function CustomRequest() {
         request_title: formData.requestTitle,
         request_description: formData.requestDescription,
         budget: formData.budget,
-        status: "Pending Review",
+        status: "pending",
       },
     ]);
 
@@ -77,11 +121,14 @@ function CustomRequest() {
 
     if (error) {
       console.error("Custom request error:", error);
-      alert(`There was an error saving the request: ${error.message}`);
+      showToast(
+        tx(`There was an error saving the request: ${error.message}`, `حدث خطأ أثناء حفظ الطلب: ${error.message}`),
+        "error"
+      );
       return;
     }
 
-    alert("Custom request submitted successfully.");
+    showToast(tx("Custom request submitted successfully.", "تم إرسال الطلب المخصص بنجاح."));
     navigate("/");
   }
 
@@ -89,18 +136,21 @@ function CustomRequest() {
     <PageWrapper>
       <div className="container page-section">
         <div className="checkout-box">
-          <h1>Request Custom Work</h1>
+          <h1>{tx("Request Custom Work", "طلب شغل مخصص")}</h1>
           <p className="checkout-text">
-            Tell us what kind of Excel system, dashboard, or custom tool you need.
+            {tx(
+              "Tell us what kind of Excel system, dashboard, or custom tool you need.",
+              "اخبرنا بنوع نظام Excel أو Dashboard أو الأداة المخصصة التي تحتاجها."
+            )}
           </p>
 
           <form className="checkout-form" onSubmit={handleSubmit}>
             <div className="form-group">
-              <label>Full Name</label>
+              <label>{tx("Full Name", "الاسم الكامل")}</label>
               <input
                 type="text"
                 name="fullName"
-                placeholder="Enter your full name"
+                placeholder={tx("Enter your full name", "ادخل اسمك الكامل")}
                 value={formData.fullName}
                 onChange={handleChange}
               />
@@ -108,11 +158,11 @@ function CustomRequest() {
             </div>
 
             <div className="form-group">
-              <label>Email</label>
+              <label>{tx("Email", "البريد الإلكتروني")}</label>
               <input
                 type="email"
                 name="email"
-                placeholder="Enter your email"
+                placeholder={tx("Enter your email", "ادخل بريدك الإلكتروني")}
                 value={formData.email}
                 onChange={handleChange}
               />
@@ -120,57 +170,57 @@ function CustomRequest() {
             </div>
 
             <div className="form-group">
-              <label>Phone Number</label>
+              <label>{tx("Phone Number", "رقم الهاتف")}</label>
               <input
                 type="text"
                 name="phone"
-                placeholder="Enter your phone number"
+                placeholder={tx("Enter your phone number", "ادخل رقم هاتفك")}
                 value={formData.phone}
                 onChange={handleChange}
               />
             </div>
 
             <div className="form-group">
-              <label>Request Title</label>
+              <label>{tx("Request Title", "عنوان الطلب")}</label>
               <input
                 type="text"
                 name="requestTitle"
-                placeholder="Example: CRM for sales team"
+                placeholder={tx("Example: CRM for sales team", "مثال: CRM لفريق المبيعات")}
                 value={formData.requestTitle}
                 onChange={handleChange}
               />
-              {errors.requestTitle && (
-                <small className="error-text">{errors.requestTitle}</small>
-              )}
+              {errors.requestTitle && <small className="error-text">{errors.requestTitle}</small>}
             </div>
 
             <div className="form-group">
-              <label>Request Description</label>
+              <label>{tx("Request Description", "وصف الطلب")}</label>
               <textarea
                 rows="6"
                 name="requestDescription"
-                placeholder="Describe exactly what you need..."
+                placeholder={tx("Describe exactly what you need...", "اشرح بالضبط ما الذي تحتاجه...")}
                 value={formData.requestDescription}
                 onChange={handleChange}
-              ></textarea>
+              />
               {errors.requestDescription && (
                 <small className="error-text">{errors.requestDescription}</small>
               )}
             </div>
 
             <div className="form-group">
-              <label>Estimated Budget</label>
+              <label>{tx("Estimated Budget", "الميزانية المتوقعة")}</label>
               <input
                 type="text"
                 name="budget"
-                placeholder="Example: 3000 EGP"
+                placeholder={tx("Example: 3000 EGP", "مثال: 3000 جنيه")}
                 value={formData.budget}
                 onChange={handleChange}
               />
             </div>
 
             <button type="submit" className="primary-btn" disabled={submitting}>
-              {submitting ? "Submitting..." : "Submit Request"}
+              {submitting
+                ? tx("Submitting...", "جاري الإرسال...")
+                : tx("Submit Request", "إرسال الطلب")}
             </button>
           </form>
         </div>

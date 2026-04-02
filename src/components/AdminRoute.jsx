@@ -1,46 +1,28 @@
-import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
-import { getCurrentUser } from "../lib/auth";
-import { supabase } from "../lib/supabase";
+import useAdmin from "../hooks/useAdmin";
 
 function AdminRoute({ children }) {
-  const [loading, setLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const { loading, user, isAdmin } = useAdmin();
 
-  useEffect(() => {
-    async function checkAdmin() {
-      const user = await getCurrentUser();
-      console.log("CURRENT USER:", user);
+  if (loading) {
+    return (
+      <div
+        style={{
+          minHeight: "40vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: "18px",
+        }}
+      >
+        Loading...
+      </div>
+    );
+  }
 
-      if (!user) {
-        console.log("NO USER FOUND");
-        setLoading(false);
-        setIsAdmin(false);
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("is_admin, email")
-        .eq("id", user.id)
-        .single();
-
-      console.log("PROFILE DATA:", data);
-      console.log("PROFILE ERROR:", error);
-
-      if (!error && data?.is_admin) {
-        setIsAdmin(true);
-      } else {
-        setIsAdmin(false);
-      }
-
-      setLoading(false);
-    }
-
-    checkAdmin();
-  }, []);
-
-  if (loading) return null;
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
 
   if (!isAdmin) {
     return <Navigate to="/" replace />;

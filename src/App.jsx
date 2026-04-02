@@ -1,10 +1,14 @@
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
+
 import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
+import AdminRoute from "./components/AdminRoute";
+
 import Hero from "./components/Hero";
 import About from "./components/About";
 import Products from "./components/Products";
-import Footer from "./components/Footer";
+
 import ProductDetails from "./pages/ProductDetails";
 import Checkout from "./pages/Checkout";
 import ProductsPage from "./pages/ProductsPage";
@@ -18,10 +22,12 @@ import MyOrders from "./pages/MyOrders";
 import CustomRequest from "./pages/CustomRequest";
 import AdminOrders from "./pages/AdminOrders";
 import AdminProducts from "./pages/AdminProducts";
-import AdminRoute from "./components/AdminRoute";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminUsers from "./pages/AdminUsers";
 import AdminCustomRequests from "./pages/AdminCustomRequests";
+import VerifyOtp from "./pages/VerifyOtp";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 function HomePage() {
   return (
     <>
@@ -48,25 +54,12 @@ function AnimatedRoutes() {
         <Route path="/register" element={<Register />} />
         <Route path="/my-orders" element={<MyOrders />} />
         <Route path="/custom-request" element={<CustomRequest />} />
-        <Route
-          path="/admin-orders"
-          element={
-            <AdminRoute>
-              <AdminOrders />
-            </AdminRoute>
-          }
-        />
-        <Route
-          path="/admin-products"
-          element={
-            <AdminRoute>
-              <AdminProducts />
-            </AdminRoute>
-          }
-        />
         <Route path="/product/:id" element={<ProductDetails />} />
         <Route path="/checkout/:id" element={<Checkout />} />
         <Route path="/order-success" element={<OrderSuccess />} />
+<Route path="/verify-otp" element={<VerifyOtp />} />
+<Route path="/forgot-password" element={<ForgotPassword />} />
+<Route path="/reset-password" element={<ResetPassword />} />
         <Route
           path="/orders"
           element={
@@ -75,32 +68,51 @@ function AnimatedRoutes() {
             </AdminRoute>
           }
         />
+
         <Route
-  path="/admin-dashboard"
-  element={
-    <AdminRoute>
-      <AdminDashboard />
-    </AdminRoute>
-  }
-/>
+          path="/admin-dashboard"
+          element={
+            <AdminRoute>
+              <AdminDashboard />
+            </AdminRoute>
+          }
+        />
 
-<Route
-  path="/admin-users"
-  element={
-    <AdminRoute>
-      <AdminUsers />
-    </AdminRoute>
-  }
-/>
+        <Route
+          path="/admin-orders"
+          element={
+            <AdminRoute>
+              <AdminOrders />
+            </AdminRoute>
+          }
+        />
 
-<Route
-  path="/admin-custom-requests"
-  element={
-    <AdminRoute>
-      <AdminCustomRequests />
-    </AdminRoute>
-  }
-/>
+        <Route
+          path="/admin-products"
+          element={
+            <AdminRoute>
+              <AdminProducts />
+            </AdminRoute>
+          }
+        />
+
+        <Route
+          path="/admin-users"
+          element={
+            <AdminRoute>
+              <AdminUsers />
+            </AdminRoute>
+          }
+        />
+
+        <Route
+          path="/admin-custom-requests"
+          element={
+            <AdminRoute>
+              <AdminCustomRequests />
+            </AdminRoute>
+          }
+        />
       </Routes>
     </AnimatePresence>
   );

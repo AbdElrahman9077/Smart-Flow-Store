@@ -1,25 +1,17 @@
-import { Link } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { getCurrentUser, signOutUser } from "../lib/auth";
+import { signOutUser } from "../lib/auth";
 import { useAppContext } from "../context/AppContext";
+import useAdmin from "../hooks/useAdmin";
 
 function Navbar() {
-  const [user, setUser] = useState(null);
+  const navigate = useNavigate();
   const { t, toggleLanguage, language, toggleTheme, theme } = useAppContext();
-
-  useEffect(() => {
-    async function loadUser() {
-      const currentUser = await getCurrentUser();
-      setUser(currentUser);
-    }
-
-    loadUser();
-  }, []);
+  const { user, isAdmin, loading } = useAdmin();
 
   async function handleLogout() {
     await signOutUser();
-    window.location.href = "/";
+    navigate("/");
   }
 
   return (
@@ -40,10 +32,60 @@ function Navbar() {
           <li><Link to="/about">{t.about}</Link></li>
           <li><Link to="/contact">{t.contact}</Link></li>
 
-          {user && <li><Link to="/my-orders">{t.myOrders}</Link></li>}
+          {user && (
+            <li>
+              <Link to="/my-orders">{t.myOrders}</Link>
+            </li>
+          )}
 
-          {!user && <li><Link to="/login">{t.login}</Link></li>}
-          {!user && <li><Link to="/register">{t.register}</Link></li>}
+          {user && (
+            <li>
+              <Link to="/custom-request">{t.customRequest || "Custom Request"}</Link>
+            </li>
+          )}
+
+          {!loading && isAdmin && (
+            <>
+              <li>
+                <Link to="/admin-dashboard">
+                  {t.adminDashboard || "Admin Dashboard"}
+                </Link>
+              </li>
+              <li>
+                <Link to="/admin-products">
+                  {t.adminProducts || "Admin Products"}
+                </Link>
+              </li>
+              <li>
+                <Link to="/admin-orders">
+                  {t.adminOrders || "Admin Orders"}
+                </Link>
+              </li>
+              <li>
+                <Link to="/admin-users">
+                  {t.adminUsers || "Admin Users"}
+                </Link>
+              </li>
+              <li>
+                <Link to="/admin-custom-requests">
+                  {t.adminCustomRequests || "Custom Requests"}
+                </Link>
+              </li>
+            </>
+          )}
+
+          {!user && (
+            <li>
+              <Link to="/login">{t.login}</Link>
+            </li>
+          )}
+
+          {!user && (
+            <li>
+              <Link to="/register">{t.register}</Link>
+            </li>
+          )}
+
           {user && (
             <li>
               <button className="nav-text-btn" onClick={handleLogout}>
