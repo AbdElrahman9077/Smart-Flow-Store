@@ -1,11 +1,29 @@
+import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import products from "../data/products";
+import { supabase } from "../lib/supabase";
 import PageWrapper from "../components/PageWrapper";
 
 function ProductDetails() {
   const { id } = useParams();
+  const [product, setProduct] = useState(null);
+  const [activeImage, setActiveImage] = useState("");
 
-  const product = products.find((item) => String(item.id) === String(id));
+  useEffect(() => {
+    async function fetchProduct() {
+      const { data, error } = await supabase
+        .from("products")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+      if (!error && data) {
+        setProduct(data);
+        setActiveImage(data.image_urls?.[0] || data.image_url || "");
+      }
+    }
+
+    fetchProduct();
+  }, [id]);
 
   if (!product) {
     return (
@@ -17,16 +35,39 @@ function ProductDetails() {
     );
   }
 
+  const gallery = product.image_urls?.length
+    ? product.image_urls
+    : product.image_url
+    ? [product.image_url]
+    : [];
+
   return (
     <PageWrapper>
       <div className="container page-section">
         <div className="details-box">
-          {product.image && (
-            <img src={product.image} alt={product.title} className="details-image" />
+          {activeImage && (
+            <img src={activeImage} alt={product.title} className="details-image" />
+          )}
+
+          {gallery.length > 1 && (
+            <div className="thumb-grid">
+              {gallery.map((img, index) => (
+                <button
+                  key={index}
+                  className="thumb-btn"
+                  onClick={() => setActiveImage(img)}
+                  type="button"
+                >
+                  <img src={img} alt={`${product.title}-${index}`} className="thumb-image" />
+                </button>
+              ))}
+            </div>
           )}
 
           <h1>{product.title}</h1>
-          <p className="details-description">{product.description}</p>
+          <p className="details-description">
+            {product.long_description || product.description}
+          </p>
           <h3 className="details-price">
             Price: {product.price} {product.currency}
           </h3>

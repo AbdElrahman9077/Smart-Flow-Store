@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { getCurrentUser, signOutUser } from "../lib/auth";
 import { useAppContext } from "../context/AppContext";
 
@@ -22,7 +23,12 @@ function Navbar() {
   }
 
   return (
-    <nav className="navbar">
+    <motion.nav
+      className="navbar"
+      initial={{ opacity: 0, y: -18 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+    >
       <div className="container nav-content">
         <h2 className="logo">
           <Link to="/">Smart Flow</Link>
@@ -33,7 +39,6 @@ function Navbar() {
           <li><Link to="/products">{t.products}</Link></li>
           <li><Link to="/about">{t.about}</Link></li>
           <li><Link to="/contact">{t.contact}</Link></li>
-          <li><Link to="/admin-orders">{t.admin}</Link></li>
 
           {user && <li><Link to="/my-orders">{t.myOrders}</Link></li>}
 
@@ -67,7 +72,7 @@ function Navbar() {
           </a>
         </div>
       </div>
-    </nav>
+    </motion.nav>
   );
 }
 

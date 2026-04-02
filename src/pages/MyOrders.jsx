@@ -3,10 +3,12 @@ import { supabase } from "../lib/supabase";
 import { getCurrentUser } from "../lib/auth";
 import PageWrapper from "../components/PageWrapper";
 import { Link } from "react-router-dom";
+import { useToast } from "../context/ToastContext";
 
 function MyOrders() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { showToast } = useToast();
 
   useEffect(() => {
     async function fetchMyOrders() {
@@ -34,6 +36,69 @@ function MyOrders() {
 
     fetchMyOrders();
   }, []);
+
+  async function handleDownload(order) {
+    try {
+      const currentUser = await getCurrentUser();
+
+      if (!currentUser) {
+        showToast("Please login first.", "error");
+        return;
+      }
+
+      if (order.status !== "Confirmed" && order.status !== "Delivered") {
+        showToast("This order is not available for download yet.", "error");
+        return;
+      }
+
+      const { data: product, error: productError } = await supabase
+        .from("products")
+        .select("file_url, file_path, title, download_count")
+        .eq("id", order.product_id)
+        .single();
+
+      if (productError || !product) {
+        showToast("Product file not found.", "error");
+        return;
+      }
+
+      let downloadUrl = "";
+
+      if (product.file_url) {
+        downloadUrl = product.file_url;
+      } else if (product.file_path) {
+        const { data } = supabase.storage
+          .from("product-files")
+          .getPublicUrl(product.file_path);
+
+        downloadUrl = data.publicUrl;
+      }
+
+      if (!downloadUrl) {
+        showToast("No downloadable file found for this product.", "error");
+        return;
+      }
+
+      await supabase.from("download_logs").insert([
+        {
+          order_id: order.id,
+          user_id: currentUser.id,
+          product_id: order.product_id,
+        },
+      ]);
+
+      await supabase
+        .from("products")
+        .update({ download_count: (product.download_count || 0) + 1 })
+        .eq("id", order.product_id);
+
+      window.open(downloadUrl, "_blank");
+      showToast("Download started successfully.");
+    } catch (error) {
+      console.error(error);
+      showToast("Something went wrong while downloading.", "error");
+    }
+  }
 
   return (
     <PageWrapper>
@@ -68,6 +133,14 @@ function MyOrders() {
                 <p><strong>Proof File:</strong> {order.proof_file_name || "No file uploaded"}</p>
                 <p><strong>Notes:</strong> {order.notes || "No notes"}</p>
                 <p><strong>Created At:</strong> {new Date(order.created_at).toLocaleString()}</p>
+
+                {(order.status === "Confirmed" || order.status === "Delivered") && (
+                  <div style={{ marginTop: "18px" }}>
+                    <button className="primary-btn" onClick={() => handleDownload(order)}>
+                      Download Product
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
