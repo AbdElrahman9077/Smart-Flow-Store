@@ -26,20 +26,28 @@ function Navbar() {
           <Link to="/">Smart Flow</Link>
         </h2>
 
-        <ul className="nav-links">
-          <li><Link to="/">Home</Link></li>
-          <li><Link to="/products">Products</Link></li>
-          <li><Link to="/about">About</Link></li>
-          <li><Link to="/contact">Contact</Link></li>
+      <ul className="nav-links">
+  <li><Link to="/">Home</Link></li>
+  <li><Link to="/products">Products</Link></li>
+  <li><Link to="/about">About</Link></li>
+  <li><Link to="/contact">Contact</Link></li>
 
-          {!user && <li><Link to="/login">Login</Link></li>}
-          {!user && <li><Link to="/register">Register</Link></li>}
-          {user && <li><button className="nav-text-btn" onClick={handleLogout}>Logout</button></li>}
-        </ul>
+  {user && <li><Link to="/my-orders">My Orders</Link></li>}
+
+  {!user && <li><Link to="/login">Login</Link></li>}
+  {!user && <li><Link to="/register">Register</Link></li>}
+  {user && (
+    <li>
+      <button className="nav-text-btn" onClick={handleLogout}>
+        Logout
+      </button>
+    </li>
+  )}
+</ul>
 
         <a
           className="whatsapp-btn"
-          href="https://wa.me/201229077644"
+          href="https://wa.me/201037461971"
           target="_blank"
           rel="noreferrer"
         >

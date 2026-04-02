@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import products from "../data/products";
 import { supabase } from "../lib/supabase";
-
+import { getCurrentUser } from "../lib/auth";
 function Checkout() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -74,42 +74,52 @@ function Checkout() {
     return newErrors;
   }
 
-  async function handleSubmit(event) {
-    event.preventDefault();
+async function handleSubmit(event) {
+  event.preventDefault();
 
-    const validationErrors = validateForm();
-    setErrors(validationErrors);
+  const validationErrors = validateForm();
+  setErrors(validationErrors);
 
-    if (Object.keys(validationErrors).length > 0) return;
+  if (Object.keys(validationErrors).length > 0) return;
 
-    setSubmitting(true);
+  setSubmitting(true);
 
-    const { error } = await supabase.from("orders").insert([
-      {
-        product_id: product.id,
-        product_title: product.title,
-        product_price: product.price,
-        currency: product.currency,
-        customer_full_name: formData.fullName,
-        customer_email: formData.email,
-        customer_phone: formData.phone,
-        payment_method: formData.paymentMethod,
-        proof_file_name: formData.proofFileName,
-        notes: formData.notes,
-        status: "Pending Review",
-      },
-    ]);
+  const currentUser = await getCurrentUser();
 
+  if (!currentUser) {
     setSubmitting(false);
-
-    if (error) {
-      console.error("Supabase insert error:", error);
-      alert("There was an error saving the order.");
-      return;
-    }
-
-    navigate("/order-success");
+    alert("Please login first before placing an order.");
+    navigate("/login");
+    return;
   }
+
+  const { error } = await supabase.from("orders").insert([
+    {
+      user_id: currentUser.id,
+      product_id: product.id,
+      product_title: product.title,
+      product_price: product.price,
+      currency: product.currency,
+      customer_full_name: formData.fullName,
+      customer_email: formData.email,
+      customer_phone: formData.phone,
+      payment_method: formData.paymentMethod,
+      proof_file_name: formData.proofFileName,
+      notes: formData.notes,
+      status: "Pending Review",
+    },
+  ]);
+
+  setSubmitting(false);
+
+  if (error) {
+    console.error("Supabase insert error:", error);
+    alert("There was an error saving the order.");
+    return;
+  }
+
+  navigate("/order-success");
+}
 
   return (
     <PageWrapper>

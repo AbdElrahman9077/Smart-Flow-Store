@@ -14,6 +14,7 @@ import OrdersPage from "./pages/OrdersPage";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import PageWrapper from "./components/PageWrapper";
+import MyOrders from "./pages/MyOrders";
 function HomePage() {
   return (
     
@@ -34,13 +35,14 @@ function App() {
       <div className="app">
         <Navbar />
 
-        <Routes>
+<Routes>
   <Route path="/" element={<HomePage />} />
   <Route path="/products" element={<ProductsPage />} />
   <Route path="/about" element={<AboutPage />} />
   <Route path="/contact" element={<ContactPage />} />
   <Route path="/login" element={<Login />} />
   <Route path="/register" element={<Register />} />
+  <Route path="/my-orders" element={<MyOrders />} />
   <Route path="/product/:id" element={<ProductDetails />} />
   <Route path="/checkout/:id" element={<Checkout />} />
   <Route path="/order-success" element={<OrderSuccess />} />
