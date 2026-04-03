@@ -23,7 +23,7 @@ export default function VerifyOtp() {
     const { error } = await supabase.auth.verifyOtp({
       email,
       token,
-      type: "signup",
+      type: "email",
     });
 
     if (error) {
