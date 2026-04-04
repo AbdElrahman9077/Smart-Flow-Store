@@ -9,7 +9,14 @@ function ProductsPage() {
     <PageWrapper>
       <div className="container page-section">
         <h1 className="page-title">{tx("Our Products", "منتجاتنا")}</h1>
-        <Products />
+        <p className="page-subtitle">
+          {tx(
+            "Browse all available systems, templates, and digital business tools.",
+            "تصفح كل الأنظمة والقوالب والأدوات الرقمية المتاحة."
+          )}
+        </p>
+
+        <Products showHeader={false} />
       </div>
     </PageWrapper>
   );

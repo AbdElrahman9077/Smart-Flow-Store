@@ -9,21 +9,42 @@ const initialFormData = {
   description: "",
   long_description: "",
   price: "",
+  old_price: "",
   currency: "EGP",
-  image_url: "",
-  file_url: "",
-  file_path: "",
+  category: "",
+  tags_text: "",
+  featured: false,
 };
 
 function AdminProducts() {
   const [products, setProducts] = useState([]);
   const [formData, setFormData] = useState(initialFormData);
+  const [coverImageFile, setCoverImageFile] = useState(null);
+  const [descriptionImageFiles, setDescriptionImageFiles] = useState([]);
+  const [productFile, setProductFile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [editingProductId, setEditingProductId] = useState(null);
+  const [editingProduct, setEditingProduct] = useState(null);
 
   const { showToast } = useToast();
   const { tx } = useAppContext();
+
+  function parseTags(value) {
+    return String(value || "")
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
+  function formatDate(value) {
+    if (!value) return tx("Not available", "غير متاح");
+    try {
+      return new Date(value).toLocaleString();
+    } catch {
+      return value;
+    }
+  }
 
   async function fetchProducts() {
     setLoading(true);
@@ -31,10 +52,11 @@ function AdminProducts() {
     const { data, error } = await supabase
       .from("products")
       .select("*")
+      .order("updated_at", { ascending: false })
       .order("created_at", { ascending: false });
 
     if (error) {
-      console.error("Fetch admin products error:", error);
+      console.error(error);
       showToast(tx("Failed to load products.", "فشل تحميل المنتجات."), "error");
       setProducts([]);
       setLoading(false);
@@ -50,33 +72,86 @@ function AdminProducts() {
   }, []);
 
   function handleChange(e) {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
 
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: type === "checkbox" ? checked : value,
     }));
   }
 
   function resetForm() {
     setFormData(initialFormData);
+    setCoverImageFile(null);
+    setDescriptionImageFiles([]);
+    setProductFile(null);
     setEditingProductId(null);
+    setEditingProduct(null);
   }
 
   function handleEdit(product) {
     setEditingProductId(product.id);
+    setEditingProduct(product);
+
     setFormData({
       title: product.title || "",
       description: product.description || "",
       long_description: product.long_description || "",
       price: product.price ?? "",
+      old_price: product.old_price ?? "",
       currency: product.currency || "EGP",
-      image_url: product.image_url || "",
-      file_url: product.file_url || "",
-      file_path: product.file_path || "",
+      category: product.category || "",
+      tags_text: Array.isArray(product.tags) ? product.tags.join(", ") : "",
+      featured: Boolean(product.featured),
     });
 
+    setCoverImageFile(null);
+    setDescriptionImageFiles([]);
+    setProductFile(null);
+
     window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  async function uploadImage(file, folder = "products") {
+    const ext = file.name.split(".").pop();
+    const path = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${ext}`;
+
+    const { error } = await supabase.storage
+      .from("product-images")
+      .upload(path, file, { upsert: false });
+
+    if (error) throw error;
+
+    const { data } = supabase.storage.from("product-images").getPublicUrl(path);
+
+    return {
+      path,
+      url: data.publicUrl,
+    };
+  }
+
+  async function uploadProductFile(file) {
+    const ext = file.name.split(".").pop();
+    const path = `products/${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${ext}`;
+
+    const { error } = await supabase.storage
+      .from("product-files")
+      .upload(path, file, { upsert: false });
+
+    if (error) throw error;
+
+    return { file_path: path };
+  }
+
+  async function uploadDescriptionImages(files) {
+    const uploaded = await Promise.all(
+      files.map((file) => uploadImage(file, "descriptions"))
+    );
+
+    return {
+      description_image_paths: uploaded.map((item) => item.path),
+      description_image_urls: uploaded.map((item) => item.url),
+    };
   }
 
   async function handleSubmit(e) {
@@ -92,65 +167,134 @@ function AdminProducts() {
       return;
     }
 
-    setSubmitting(true);
-
-    const payload = {
-      title: formData.title.trim(),
-      description: formData.description.trim(),
-      long_description: formData.long_description.trim(),
-      price: Number(formData.price),
-      currency: formData.currency.trim() || "EGP",
-      image_url: formData.image_url.trim(),
-      image_urls: formData.image_url.trim() ? [formData.image_url.trim()] : [],
-      file_url: formData.file_url.trim(),
-      file_path: formData.file_path.trim(),
-    };
-
-    let error = null;
-
-    if (editingProductId) {
-      const response = await supabase
-        .from("products")
-        .update(payload)
-        .eq("id", editingProductId);
-
-      error = response.error;
-    } else {
-      const response = await supabase.from("products").insert([
-        {
-          ...payload,
-          is_active: true,
-          download_count: 0,
-        },
-      ]);
-
-      error = response.error;
+    if (Number(formData.price) < 0) {
+      showToast(tx("Price cannot be negative.", "السعر لا يمكن أن يكون سالبًا."), "error");
+      return;
     }
 
-    setSubmitting(false);
-
-    if (error) {
+    if (formData.old_price !== "" && Number(formData.old_price) < 0) {
       showToast(
-        tx(`Failed to save product: ${error.message}`, `فشل حفظ المنتج: ${error.message}`),
+        tx("Old price cannot be negative.", "السعر القديم لا يمكن أن يكون سالبًا."),
         "error"
       );
       return;
     }
 
-    showToast(
-      editingProductId
-        ? tx("Product updated successfully.", "تم تحديث المنتج بنجاح.")
-        : tx("Product added successfully.", "تمت إضافة المنتج بنجاح.")
-    );
+    if (!editingProductId && !productFile) {
+      showToast(tx("Please upload the product file.", "من فضلك ارفع ملف المنتج."), "error");
+      return;
+    }
 
-    resetForm();
-    fetchProducts();
+    if (!editingProductId && !coverImageFile) {
+      showToast(tx("Please upload a cover image.", "من فضلك ارفع صورة الغلاف."), "error");
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      let coverImagePath =
+        editingProduct?.cover_image_path || editingProduct?.image_path || null;
+      let coverImageUrl =
+        editingProduct?.cover_image_url || editingProduct?.image_url || "";
+      let descriptionImagePaths = Array.isArray(editingProduct?.description_image_paths)
+        ? editingProduct.description_image_paths
+        : [];
+      let descriptionImageUrls = Array.isArray(editingProduct?.description_image_urls)
+        ? editingProduct.description_image_urls
+        : [];
+      let filePath = editingProduct?.file_path || null;
+
+      if (coverImageFile) {
+        const uploadedCover = await uploadImage(coverImageFile, "covers");
+        coverImagePath = uploadedCover.path;
+        coverImageUrl = uploadedCover.url;
+      }
+
+      if (descriptionImageFiles.length > 0) {
+        const uploadedDescriptions = await uploadDescriptionImages(descriptionImageFiles);
+        descriptionImagePaths = uploadedDescriptions.description_image_paths;
+        descriptionImageUrls = uploadedDescriptions.description_image_urls;
+      }
+
+      if (productFile) {
+        const uploadedFile = await uploadProductFile(productFile);
+        filePath = uploadedFile.file_path;
+      }
+
+      const allImageUrls = [coverImageUrl, ...descriptionImageUrls].filter(Boolean);
+
+      const payload = {
+        title: formData.title.trim(),
+        description: formData.description.trim(),
+        long_description: formData.long_description.trim(),
+        price: Number(formData.price),
+        old_price:
+          String(formData.old_price).trim() === "" ? null : Number(formData.old_price),
+        currency: formData.currency.trim() || "EGP",
+        category: formData.category.trim() || null,
+        tags: parseTags(formData.tags_text),
+        featured: Boolean(formData.featured),
+        cover_image_path: coverImagePath,
+        cover_image_url: coverImageUrl,
+        image_path: coverImagePath,
+        image_url: coverImageUrl,
+        image_urls: allImageUrls,
+        description_image_paths: descriptionImagePaths,
+        description_image_urls: descriptionImageUrls,
+        file_path: filePath,
+        updated_at: new Date().toISOString(),
+      };
+
+      let error = null;
+
+      if (editingProductId) {
+        const response = await supabase
+          .from("products")
+          .update(payload)
+          .eq("id", editingProductId);
+
+        error = response.error;
+      } else {
+        const response = await supabase.from("products").insert([
+          {
+            ...payload,
+            is_active: true,
+            download_count: 0,
+          },
+        ]);
+
+        error = response.error;
+      }
+
+      if (error) throw error;
+
+      showToast(
+        editingProductId
+          ? tx("Product updated successfully.", "تم تحديث المنتج بنجاح.")
+          : tx("Product added successfully.", "تمت إضافة المنتج بنجاح.")
+      );
+
+      resetForm();
+      fetchProducts();
+    } catch (error) {
+      console.error(error);
+      showToast(
+        tx(`Failed to save product: ${error.message}`, `فشل حفظ المنتج: ${error.message}`),
+        "error"
+      );
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   async function toggleActive(product) {
     const { error } = await supabase
       .from("products")
-      .update({ is_active: !product.is_active })
+      .update({
+        is_active: !product.is_active,
+        updated_at: new Date().toISOString(),
+      })
       .eq("id", product.id);
 
     if (error) {
@@ -175,8 +319,8 @@ function AdminProducts() {
       <div className="container page-section">
         <h1 className="page-title">{tx("Admin Products", "إدارة المنتجات")}</h1>
 
-        <div className="checkout-box" style={{ marginBottom: "30px" }}>
-          <h2 style={{ marginBottom: "20px" }}>
+        <div className="checkout-box" style={{ marginBottom: 30 }}>
+          <h2 style={{ marginBottom: 20 }}>
             {editingProductId
               ? tx("Edit Product", "تعديل المنتج")
               : tx("Add New Product", "إضافة منتج جديد")}
@@ -190,7 +334,7 @@ function AdminProducts() {
                 name="title"
                 value={formData.title}
                 onChange={handleChange}
-                placeholder={tx("Enter product title", "ادخل عنوان المنتج")}
+                required
               />
             </div>
 
@@ -201,7 +345,6 @@ function AdminProducts() {
                 name="description"
                 value={formData.description}
                 onChange={handleChange}
-                placeholder={tx("Enter short description", "ادخل وصفًا مختصرًا")}
               />
             </div>
 
@@ -212,7 +355,6 @@ function AdminProducts() {
                 name="long_description"
                 value={formData.long_description}
                 onChange={handleChange}
-                placeholder={tx("Enter full description", "ادخل الوصف الكامل")}
               />
             </div>
 
@@ -220,10 +362,25 @@ function AdminProducts() {
               <label>{tx("Price", "السعر")}</label>
               <input
                 type="number"
+                min="0"
+                step="0.01"
                 name="price"
                 value={formData.price}
                 onChange={handleChange}
-                placeholder={tx("Enter price", "ادخل السعر")}
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label>{tx("Old Price", "السعر القديم")}</label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                name="old_price"
+                value={formData.old_price}
+                onChange={handleChange}
+                placeholder={tx("Optional", "اختياري")}
               />
             </div>
 
@@ -234,47 +391,95 @@ function AdminProducts() {
                 name="currency"
                 value={formData.currency}
                 onChange={handleChange}
-                placeholder={tx("Example: EGP", "مثال: EGP")}
               />
             </div>
 
             <div className="form-group">
-              <label>{tx("Main Image URL", "رابط الصورة الرئيسية")}</label>
+              <label>{tx("Category", "التصنيف")}</label>
               <input
                 type="text"
-                name="image_url"
-                value={formData.image_url}
+                name="category"
+                value={formData.category}
                 onChange={handleChange}
-                placeholder={tx("Enter image URL", "ادخل رابط الصورة")}
+                placeholder={tx("Example: Excel System", "مثال: نظام Excel")}
               />
             </div>
 
             <div className="form-group">
-              <label>{tx("File URL", "رابط الملف")}</label>
+              <label>{tx("Tags", "الوسوم")}</label>
               <input
                 type="text"
-                name="file_url"
-                value={formData.file_url}
-                onChange={handleChange}
-                placeholder={tx("Optional direct download URL", "رابط مباشر اختياري للتحميل")}
-              />
-            </div>
-
-            <div className="form-group">
-              <label>{tx("File Path", "مسار الملف")}</label>
-              <input
-                type="text"
-                name="file_path"
-                value={formData.file_path}
+                name="tags_text"
+                value={formData.tags_text}
                 onChange={handleChange}
                 placeholder={tx(
-                  "Optional storage path inside bucket",
-                  "مسار الملف داخل الـ bucket بشكل اختياري"
+                  "Comma separated tags",
+                  "اكتب الوسوم مفصولة بفاصلة"
                 )}
               />
             </div>
 
-            <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+            <div className="form-group">
+              <label style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <input
+                  type="checkbox"
+                  name="featured"
+                  checked={formData.featured}
+                  onChange={handleChange}
+                />
+                {tx("Featured Product", "منتج مميز")}
+              </label>
+            </div>
+
+            <div className="form-group">
+              <label>{tx("Cover Image", "صورة الغلاف")}</label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setCoverImageFile(e.target.files?.[0] || null)}
+              />
+              {editingProduct?.cover_image_url && !coverImageFile && (
+                <small>
+                  {tx("Current cover exists.", "يوجد غلاف حالي.")}
+                </small>
+              )}
+            </div>
+
+            <div className="form-group">
+              <label>{tx("Description Images", "صور الوصف")}</label>
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={(e) => setDescriptionImageFiles(Array.from(e.target.files || []))}
+              />
+              {Array.isArray(editingProduct?.description_image_urls) &&
+                editingProduct.description_image_urls.length > 0 &&
+                descriptionImageFiles.length === 0 && (
+                  <small>
+                    {tx(
+                      `Current description images: ${editingProduct.description_image_urls.length}`,
+                      `صور الوصف الحالية: ${editingProduct.description_image_urls.length}`
+                    )}
+                  </small>
+                )}
+            </div>
+
+            <div className="form-group">
+              <label>{tx("Product File", "ملف المنتج")}</label>
+              <input
+                type="file"
+                accept=".zip,.rar,.7z,.xlsx,.xlsm,.pdf,.docx,.pptx"
+                onChange={(e) => setProductFile(e.target.files?.[0] || null)}
+              />
+              {editingProduct?.file_path && !productFile && (
+                <small>
+                  {tx("Current product file exists.", "يوجد ملف منتج حالي.")}
+                </small>
+              )}
+            </div>
+
+            <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
               <button type="submit" className="primary-btn" disabled={submitting}>
                 {submitting
                   ? tx("Saving...", "جاري الحفظ...")
@@ -319,14 +524,33 @@ function AdminProducts() {
                   <strong>{tx("Price:", "السعر:")}</strong> {product.price} {product.currency}
                 </p>
 
+                {product.old_price ? (
+                  <p>
+                    <strong>{tx("Old Price:", "السعر القديم:")}</strong> {product.old_price}{" "}
+                    {product.currency}
+                  </p>
+                ) : null}
+
+                <p>
+                  <strong>{tx("Category:", "التصنيف:")}</strong>{" "}
+                  {product.category || tx("Not set", "غير محدد")}
+                </p>
+
+                <p>
+                  <strong>{tx("Featured:", "مميز:")}</strong>{" "}
+                  {product.featured ? tx("Yes", "نعم") : tx("No", "لا")}
+                </p>
+
                 <p>
                   <strong>{tx("Description:", "الوصف:")}</strong>{" "}
                   {product.description || tx("No description", "لا يوجد وصف")}
                 </p>
 
                 <p>
-                  <strong>{tx("File URL:", "رابط الملف:")}</strong>{" "}
-                  {product.file_url || tx("Not set", "غير محدد")}
+                  <strong>{tx("Tags:", "الوسوم:")}</strong>{" "}
+                  {Array.isArray(product.tags) && product.tags.length > 0
+                    ? product.tags.join(", ")
+                    : tx("No tags", "لا توجد وسوم")}
                 </p>
 
                 <p>
@@ -334,12 +558,22 @@ function AdminProducts() {
                   {product.file_path || tx("Not set", "غير محدد")}
                 </p>
 
-                {product.image_url && (
+                <p>
+                  <strong>{tx("Downloads:", "التحميلات:")}</strong>{" "}
+                  {product.download_count || 0}
+                </p>
+
+                <p>
+                  <strong>{tx("Updated At:", "آخر تحديث:")}</strong>{" "}
+                  {formatDate(product.updated_at || product.created_at)}
+                </p>
+
+                {product.cover_image_url && (
                   <img
-                    src={product.image_url}
+                    src={product.cover_image_url}
                     alt={product.title}
                     className="product-image"
-                    style={{ maxWidth: "250px" }}
+                    style={{ maxWidth: 250 }}
                   />
                 )}
 

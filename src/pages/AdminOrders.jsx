@@ -12,6 +12,7 @@ import {
 function AdminOrders() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [updatingOrderId, setUpdatingOrderId] = useState(null);
 
   const { showToast } = useToast();
   const { tx } = useAppContext();
@@ -40,12 +41,11 @@ function AdminOrders() {
 
   function formatDate(value) {
     if (!value) return tx("Not available", "غير متاح");
-    return new Date(value).toLocaleString();
-  }
-
-  function isImageFile(url) {
-    if (!url) return false;
-    return /\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(url);
+    try {
+      return new Date(value).toLocaleString();
+    } catch {
+      return value;
+    }
   }
 
   async function fetchOrders() {
@@ -72,27 +72,114 @@ function AdminOrders() {
     fetchOrders();
   }, []);
 
+  async function handleOpenProof(order) {
+    try {
+      if (order.proof_file_path) {
+        const { data, error } = await supabase.storage
+          .from("payment-proofs")
+          .createSignedUrl(order.proof_file_path, 300);
+
+        if (!error && data?.signedUrl) {
+          window.open(data.signedUrl, "_blank");
+          return;
+        }
+      }
+
+      if (order.proof_file_url) {
+        window.open(order.proof_file_url, "_blank");
+        return;
+      }
+
+      showToast(
+        tx("No payment proof available for this order.", "لا يوجد إثبات دفع لهذا الطلب."),
+        "error"
+      );
+    } catch (err) {
+      console.error(err);
+      showToast(tx("Could not open payment proof.", "تعذر فتح إثبات الدفع."), "error");
+    }
+  }
+
+  function getCustomerEmailMessage(normalized, productTitle) {
+    if (normalized === "confirmed") {
+      return `
+        <div>
+          <h2>Your order has been confirmed</h2>
+          <p>Product: ${productTitle || "-"}</p>
+          <p>Your product is now available in My Orders for one-time download.</p>
+        </div>
+      `;
+    }
+
+    if (normalized === "rejected") {
+      return `
+        <div>
+          <h2>Your order has been rejected</h2>
+          <p>Product: ${productTitle || "-"}</p>
+          <p>Please contact support if you need more details.</p>
+        </div>
+      `;
+    }
+
+    if (normalized === "delivered") {
+      return `
+        <div>
+          <h2>Your order has been marked as delivered</h2>
+          <p>Product: ${productTitle || "-"}</p>
+          <p>This order is now considered completed.</p>
+        </div>
+      `;
+    }
+
+    return `
+      <div>
+        <h2>Your order status has been updated</h2>
+        <p>Product: ${productTitle || "-"}</p>
+        <p>Status: ${normalized}</p>
+      </div>
+    `;
+  }
+
   async function handleStatusChange(order, nextStatus) {
     const normalized = normalizeStatus(nextStatus);
+    const now = new Date().toISOString();
+
+    setUpdatingOrderId(order.id);
 
     const payload = {
       status: normalized,
-      download_enabled: normalized === "confirmed" || normalized === "delivered",
+      updated_at: now,
     };
 
     if (normalized === "confirmed") {
-      payload.confirmed_at = new Date().toISOString();
+      payload.confirmed_at = now;
+      payload.download_enabled = true;
+      payload.download_used = false;
+      payload.download_used_at = null;
     }
 
-    if (normalized === "pending" || normalized === "rejected") {
+    if (normalized === "pending") {
       payload.confirmed_at = null;
       payload.download_enabled = false;
+    }
+
+    if (normalized === "rejected") {
+      payload.download_enabled = false;
+      payload.confirmed_at = null;
+    }
+
+    if (normalized === "delivered") {
+      payload.download_enabled = false;
+      payload.download_used = true;
+      payload.download_used_at = order.download_used_at || now;
     }
 
     const { error } = await supabase
       .from("orders")
       .update(payload)
       .eq("id", order.id);
+
+    setUpdatingOrderId(null);
 
     if (error) {
       console.error("Update status error:", error);
@@ -103,50 +190,41 @@ function AdminOrders() {
       return;
     }
 
-    await createAuditLog({
-      action: "order_status_changed",
-      entityType: "order",
-      entityId: order.id,
-      description: `Order #${order.id} changed to ${normalized}`,
-      metadata: {
-        orderId: order.id,
-        status: normalized,
-        customerEmail: order.customer_email || null,
-        productTitle: order.product_title || null,
-      },
-    });
+    await Promise.allSettled([
+      createAuditLog({
+        action: "order_status_changed",
+        entityType: "order",
+        entityId: order.id,
+        description: `Order #${order.id} changed to ${normalized}`,
+        metadata: {
+          orderId: order.id,
+          status: normalized,
+          customerEmail: order.customer_email || null,
+          productTitle: order.product_title || null,
+        },
+      }),
 
-    await sendAdminNotification({
-      subject: `Smart Flow - Order #${order.id} updated`,
-      html: `
-        <div>
-          <h2>Order Updated</h2>
-          <p>Order ID: ${order.id}</p>
-          <p>Product: ${order.product_title || "-"}</p>
-          <p>Customer: ${order.customer_full_name || "-"}</p>
-          <p>Status: ${normalized}</p>
-        </div>
-      `,
-    });
-
-    if (order.customer_email) {
-      await sendCustomerEmail({
-        to: order.customer_email,
-        subject: "Smart Flow - Order Status Updated",
+      sendAdminNotification({
+        subject: `Smart Flow - Order #${order.id} updated`,
         html: `
           <div>
-            <h2>Your order status has been updated</h2>
+            <h2>Order Updated</h2>
+            <p>Order ID: ${order.id}</p>
             <p>Product: ${order.product_title || "-"}</p>
-            <p>New status: ${normalized}</p>
-            ${
-              normalized === "confirmed" || normalized === "delivered"
-                ? "<p>Your product is now available in My Orders for download.</p>"
-                : ""
-            }
+            <p>Customer: ${order.customer_full_name || "-"}</p>
+            <p>Status: ${normalized}</p>
           </div>
         `,
-      });
-    }
+      }),
+
+      order.customer_email
+        ? sendCustomerEmail({
+            to: order.customer_email,
+            subject: "Smart Flow - Order Status Updated",
+            html: getCustomerEmailMessage(normalized, order.product_title),
+          })
+        : Promise.resolve(),
+    ]);
 
     showToast(tx("Order status updated successfully.", "تم تحديث حالة الطلب بنجاح."));
     fetchOrders();
@@ -179,75 +257,99 @@ function AdminOrders() {
                 </div>
 
                 <p>
-                  <strong>{tx("Price:", "السعر:")}</strong>{" "}
-                  {order.product_price} {order.currency}
+                  <strong>{tx("Price:", "السعر:")}</strong> {order.product_price}{" "}
+                  {order.currency}
                 </p>
-
                 <p>
                   <strong>{tx("Customer:", "العميل:")}</strong>{" "}
                   {order.customer_full_name || tx("No name", "بدون اسم")}
                 </p>
-
                 <p>
                   <strong>{tx("Email:", "البريد الإلكتروني:")}</strong>{" "}
                   {order.customer_email || tx("No email", "بدون بريد")}
                 </p>
-
                 <p>
                   <strong>{tx("Phone:", "الهاتف:")}</strong>{" "}
                   {order.customer_phone || tx("No phone", "بدون رقم")}
                 </p>
-
                 <p>
                   <strong>{tx("Payment:", "طريقة الدفع:")}</strong>{" "}
                   {order.payment_method || tx("Not specified", "غير محددة")}
                 </p>
-
                 <p>
                   <strong>{tx("Notes:", "الملاحظات:")}</strong>{" "}
                   {order.notes || tx("No notes", "لا توجد ملاحظات")}
                 </p>
-
                 <p>
                   <strong>{tx("Download Enabled:", "التحميل متاح:")}</strong>{" "}
                   {order.download_enabled ? tx("Yes", "نعم") : tx("No", "لا")}
                 </p>
-
+                <p>
+                  <strong>{tx("Download Used:", "تم استخدام التحميل:")}</strong>{" "}
+                  {order.download_used ? tx("Yes", "نعم") : tx("No", "لا")}
+                </p>
                 <p>
                   <strong>{tx("Created At:", "تاريخ الإنشاء:")}</strong>{" "}
                   {formatDate(order.created_at)}
                 </p>
 
-                {order.proof_file_url && (
+                {order.confirmed_at && (
+                  <p>
+                    <strong>{tx("Confirmed At:", "تاريخ التأكيد:")}</strong>{" "}
+                    {formatDate(order.confirmed_at)}
+                  </p>
+                )}
+
+                {order.download_used_at && (
+                  <p>
+                    <strong>{tx("Download Used At:", "تاريخ استخدام التحميل:")}</strong>{" "}
+                    {formatDate(order.download_used_at)}
+                  </p>
+                )}
+
+                {(order.proof_file_path || order.proof_file_url) && (
                   <div className="proof-preview">
                     <p>
                       <strong>{tx("Payment Proof:", "إثبات الدفع:")}</strong>
                     </p>
-
-                    <a href={order.proof_file_url} target="_blank" rel="noreferrer">
+                    <button
+                      type="button"
+                      className="primary-btn"
+                      onClick={() => handleOpenProof(order)}
+                    >
                       {tx("Open proof", "فتح الإثبات")}
-                    </a>
-
-                    {isImageFile(order.proof_file_url) && (
-                      <img src={order.proof_file_url} alt="Payment proof" />
-                    )}
+                    </button>
                   </div>
                 )}
 
                 <div className="status-actions">
-                  <button onClick={() => handleStatusChange(order, "pending")}>
+                  <button
+                    onClick={() => handleStatusChange(order, "pending")}
+                    disabled={updatingOrderId === order.id}
+                  >
                     {tx("Pending", "قيد المراجعة")}
                   </button>
 
-                  <button onClick={() => handleStatusChange(order, "confirmed")}>
-                    {tx("Confirm", "تأكيد")}
+                  <button
+                    onClick={() => handleStatusChange(order, "confirmed")}
+                    disabled={updatingOrderId === order.id}
+                  >
+                    {updatingOrderId === order.id
+                      ? tx("Updating...", "جاري التحديث...")
+                      : tx("Confirm", "تأكيد")}
                   </button>
 
-                  <button onClick={() => handleStatusChange(order, "rejected")}>
+                  <button
+                    onClick={() => handleStatusChange(order, "rejected")}
+                    disabled={updatingOrderId === order.id}
+                  >
                     {tx("Reject", "رفض")}
                   </button>
 
-                  <button onClick={() => handleStatusChange(order, "delivered")}>
+                  <button
+                    onClick={() => handleStatusChange(order, "delivered")}
+                    disabled={updatingOrderId === order.id}
+                  >
                     {tx("Deliver", "تسليم")}
                   </button>
                 </div>

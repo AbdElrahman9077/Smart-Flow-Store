@@ -27,81 +27,53 @@ function Navbar() {
         </h2>
 
         <ul className="nav-links">
-          <li><Link to="/">{t.home}</Link></li>
-          <li><Link to="/products">{t.products}</Link></li>
-          <li><Link to="/about">{t.about}</Link></li>
-          <li><Link to="/contact">{t.contact}</Link></li>
+          {!user ? (
+            <>
+              <li><Link to="/">{t.home}</Link></li>
+              <li><Link to="/about">{t.about}</Link></li>
 
-          {user && (
-            <li>
-              <Link to="/my-orders">{t.myOrders}</Link>
-            </li>
-          )}
+              <li>
+                <Link to="/login" className="nav-outline-btn">
+                  {t.login}
+                </Link>
+              </li>
 
-          {user && (
-            <li>
-              <Link to="/custom-request">{t.customRequest || "Custom Request"}</Link>
-            </li>
-          )}
+              <li>
+                <Link to="/register" className="nav-primary-btn">
+                  {t.register}
+                </Link>
+              </li>
+            </>
+          ) : (
+            <>
+              <li><Link to="/">{t.home}</Link></li>
+              <li><Link to="/products">{t.products}</Link></li>
+              <li><Link to="/about">{t.about}</Link></li>
+              <li><Link to="/contact">{t.contact}</Link></li>
+              <li><Link to="/my-orders">{t.myOrders}</Link></li>
+              <li>
+                <Link to="/custom-request">
+                  {t.customRequest || "Custom Request"}
+                </Link>
+              </li>
 
-        {!loading && isAdmin && (
-  <>
-    <li>
-      <Link to="/admin-dashboard">
-        {t.adminDashboard || "Admin Dashboard"}
-      </Link>
-    </li>
+              {!loading && isAdmin && (
+                <>
+                  <li><Link to="/admin-dashboard">{t.adminDashboard || "Admin Dashboard"}</Link></li>
+                  <li><Link to="/admin-products">{t.adminProducts || "Admin Products"}</Link></li>
+                  <li><Link to="/admin-orders">{t.adminOrders || "Admin Orders"}</Link></li>
+                  <li><Link to="/admin-users">{t.adminUsers || "Admin Users"}</Link></li>
+                  <li><Link to="/admin-custom-requests">{t.adminCustomRequests || "Custom Requests"}</Link></li>
+                  <li><Link to="/admin-logs">{t.adminLogs || "Admin Logs"}</Link></li>
+                </>
+              )}
 
-    <li>
-      <Link to="/admin-products">
-        {t.adminProducts || "Admin Products"}
-      </Link>
-    </li>
-
-    <li>
-      <Link to="/admin-orders">
-        {t.adminOrders || "Admin Orders"}
-      </Link>
-    </li>
-
-    <li>
-      <Link to="/admin-users">
-        {t.adminUsers || "Admin Users"}
-      </Link>
-    </li>
-
-    <li>
-      <Link to="/admin-custom-requests">
-        {t.adminCustomRequests || "Custom Requests"}
-      </Link>
-    </li>
-
-    <li>
-      <Link to="/admin-logs">
-        {t.adminLogs || "Admin Logs"}
-      </Link>
-    </li>
-  </>
-)}
-
-          {!user && (
-            <li>
-              <Link to="/login">{t.login}</Link>
-            </li>
-          )}
-
-          {!user && (
-            <li>
-              <Link to="/register">{t.register}</Link>
-            </li>
-          )}
-
-          {user && (
-            <li>
-              <button className="nav-text-btn" onClick={handleLogout}>
-                {t.logout}
-              </button>
-            </li>
+              <li>
+                <button className="nav-text-btn" onClick={handleLogout}>
+                  {t.logout}
+                </button>
+              </li>
+            </>
           )}
         </ul>
 

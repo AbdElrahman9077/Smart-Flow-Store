@@ -10,6 +10,7 @@ function MyOrders() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(true);
+  const [downloadingOrderId, setDownloadingOrderId] = useState(null);
 
   const { showToast } = useToast();
   const { tx, t } = useAppContext();
@@ -37,17 +38,20 @@ function MyOrders() {
   }
 
   function canDownload(order) {
-    const normalized = normalizeStatus(order.status);
     return (
-      order.download_enabled === true ||
-      normalized === "confirmed" ||
-      normalized === "delivered"
+      normalizeStatus(order.status) === "confirmed" &&
+      order.download_enabled === true &&
+      order.download_used !== true
     );
   }
 
   function formatDate(value) {
     if (!value) return tx("Not available", "غير متاح");
-    return new Date(value).toLocaleString();
+    try {
+      return new Date(value).toLocaleString();
+    } catch {
+      return value;
+    }
   }
 
   useEffect(() => {
@@ -72,7 +76,7 @@ function MyOrders() {
         .order("created_at", { ascending: false });
 
       if (error) {
-        console.error("Fetch my orders error:", error);
+        console.error(error);
         showToast(tx("Failed to load your orders.", "فشل تحميل طلباتك."), "error");
         setOrders([]);
         setLoading(false);
@@ -86,89 +90,150 @@ function MyOrders() {
     fetchMyOrders();
   }, []);
 
+  function triggerDownload(url) {
+    const link = document.createElement("a");
+    link.href = url;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  }
+
   async function handleDownload(order) {
     try {
+      setDownloadingOrderId(order.id);
+
       const currentUser = await getCurrentUser();
 
       if (!currentUser) {
         showToast(tx("Please login first.", "سجل دخول أولًا."), "error");
+        setDownloadingOrderId(null);
         return;
       }
 
       if (!canDownload(order)) {
         showToast(
-          tx("This order is not available for download yet.", "هذا الطلب غير متاح للتحميل حتى الآن."),
+          tx("This order is not available for download.", "هذا الطلب غير متاح للتحميل."),
           "error"
         );
+        setDownloadingOrderId(null);
         return;
       }
 
       const { data: product, error: productError } = await supabase
         .from("products")
-        .select("file_url, file_path, title, download_count")
+        .select("file_path, title, download_count")
         .eq("id", order.product_id)
         .single();
 
-      if (productError || !product) {
+      if (productError || !product?.file_path) {
         showToast(tx("Product file not found.", "ملف المنتج غير موجود."), "error");
+        setDownloadingOrderId(null);
         return;
       }
 
-      let downloadUrl = "";
+      const now = new Date().toISOString();
 
-      if (product.file_path) {
-        const { data: signedData, error: signedError } = await supabase.storage
-          .from("product-files")
-          .createSignedUrl(product.file_path, 300);
+      const { data: lockedOrder, error: lockError } = await supabase
+        .from("orders")
+        .update({
+          status: "delivered",
+          download_enabled: false,
+          download_used: true,
+          download_used_at: now,
+        })
+        .eq("id", order.id)
+        .eq("user_id", currentUser.id)
+        .eq("status", "confirmed")
+        .eq("download_enabled", true)
+        .or("download_used.is.null,download_used.eq.false")
+        .select("id")
+        .maybeSingle();
 
-        if (signedError) {
-          console.error("Signed URL error:", signedError);
-        } else {
-          downloadUrl = signedData?.signedUrl || "";
-        }
+      if (lockError) {
+        console.error(lockError);
+        showToast(tx("Could not lock this download.", "تعذر قفل هذا التحميل."), "error");
+        setDownloadingOrderId(null);
+        return;
       }
 
-      if (!downloadUrl && product.file_url) {
-        downloadUrl = product.file_url;
-      }
-
-      if (!downloadUrl) {
+      if (!lockedOrder) {
         showToast(
-          tx("No downloadable file found for this product.", "لا يوجد ملف قابل للتحميل لهذا المنتج."),
+          tx(
+            "This order was already used or is no longer available.",
+            "تم استخدام هذا الطلب بالفعل أو لم يعد متاحًا."
+          ),
           "error"
         );
+        setDownloadingOrderId(null);
         return;
       }
 
-      const { error: logError } = await supabase.from("download_logs").insert([
-        {
-          order_id: order.id,
-          user_id: currentUser.id,
-          product_id: order.product_id,
-        },
+      const { data: signedData, error: signedError } = await supabase.storage
+        .from("product-files")
+        .createSignedUrl(product.file_path, 60);
+
+      if (signedError || !signedData?.signedUrl) {
+        console.error(signedError);
+
+        await supabase
+          .from("orders")
+          .update({
+            status: "confirmed",
+            download_enabled: true,
+            download_used: false,
+            download_used_at: null,
+          })
+          .eq("id", order.id)
+          .eq("user_id", currentUser.id);
+
+        showToast(tx("Could not generate download link.", "تعذر إنشاء رابط التحميل."), "error");
+        setDownloadingOrderId(null);
+        return;
+      }
+
+      await Promise.allSettled([
+        supabase.from("download_logs").insert([
+          {
+            order_id: order.id,
+            user_id: currentUser.id,
+            product_id: order.product_id,
+          },
+        ]),
+        supabase
+          .from("products")
+          .update({ download_count: (product.download_count || 0) + 1 })
+          .eq("id", order.product_id),
       ]);
 
-      if (logError) {
-        console.error("Download log insert error:", logError);
-      }
+      triggerDownload(signedData.signedUrl);
 
-      const { error: countError } = await supabase
-        .from("products")
-        .update({ download_count: (product.download_count || 0) + 1 })
-        .eq("id", order.product_id);
+      setOrders((prev) =>
+        prev.map((item) =>
+          item.id === order.id
+            ? {
+                ...item,
+                status: "delivered",
+                download_enabled: false,
+                download_used: true,
+                download_used_at: now,
+              }
+            : item
+        )
+      );
 
-      if (countError) {
-        console.error("Download count update error:", countError);
-      }
-
-      window.open(downloadUrl, "_blank");
-      showToast(tx("Download started successfully.", "بدأ التحميل بنجاح."));
+      showToast(
+        tx(
+          "Download started. This order is now marked as delivered.",
+          "بدأ التحميل وتم اعتبار الطلب مُسلّمًا."
+        )
+      );
     } catch (error) {
       console.error(error);
-      showToast(
-        tx("Something went wrong while downloading.", "حدث خطأ أثناء التحميل."),
-        "error"
-      );
+      showToast(tx("Something went wrong while downloading.", "حدث خطأ أثناء التحميل."), "error");
+    } finally {
+      setDownloadingOrderId(null);
     }
   }
 
@@ -189,11 +254,10 @@ function MyOrders() {
               {tx("Please login first to view your orders.", "سجل دخول أولًا لمشاهدة طلباتك.")}
             </p>
 
-            <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+            <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
               <Link to="/login" className="primary-link-btn">
                 {t.login}
               </Link>
-
               <Link to="/products" className="secondary-link-btn">
                 {tx("Browse Products", "تصفح المنتجات")}
               </Link>
@@ -204,7 +268,6 @@ function MyOrders() {
             <p className="details-description">
               {tx("You have no orders yet.", "ليس لديك طلبات حتى الآن.")}
             </p>
-
             <Link to="/products" className="primary-link-btn">
               {tx("Browse Products", "تصفح المنتجات")}
             </Link>
@@ -219,49 +282,65 @@ function MyOrders() {
                 </div>
 
                 <p>
-                  <strong>{tx("Price:", "السعر:")}</strong>{" "}
-                  {order.product_price} {order.currency}
+                  <strong>{tx("Price:", "السعر:")}</strong> {order.product_price}{" "}
+                  {order.currency}
                 </p>
-
                 <p>
                   <strong>{tx("Name:", "الاسم:")}</strong>{" "}
                   {order.customer_full_name || tx("No name", "بدون اسم")}
                 </p>
-
                 <p>
                   <strong>{tx("Email:", "البريد الإلكتروني:")}</strong>{" "}
                   {order.customer_email || tx("No email", "بدون بريد")}
                 </p>
-
                 <p>
                   <strong>{tx("Phone:", "الهاتف:")}</strong>{" "}
                   {order.customer_phone || tx("No phone", "بدون رقم")}
                 </p>
-
                 <p>
                   <strong>{tx("Payment:", "طريقة الدفع:")}</strong>{" "}
                   {order.payment_method || tx("Not specified", "غير محددة")}
                 </p>
-
-                <p>
-                  <strong>{tx("Proof File:", "ملف الإثبات:")}</strong>{" "}
-                  {order.proof_file_name || tx("No file uploaded", "لم يتم رفع ملف")}
-                </p>
-
                 <p>
                   <strong>{tx("Notes:", "الملاحظات:")}</strong>{" "}
                   {order.notes || tx("No notes", "لا توجد ملاحظات")}
                 </p>
-
                 <p>
                   <strong>{tx("Created At:", "تاريخ الإنشاء:")}</strong>{" "}
                   {formatDate(order.created_at)}
                 </p>
 
+                {order.download_used && (
+                  <p>
+                    <strong>{tx("Download Used:", "تم استخدام التحميل:")}</strong>{" "}
+                    {tx("Yes", "نعم")}
+                  </p>
+                )}
+
+                {order.download_used_at && (
+                  <p>
+                    <strong>{tx("Download Used At:", "تاريخ استخدام التحميل:")}</strong>{" "}
+                    {formatDate(order.download_used_at)}
+                  </p>
+                )}
+
                 {canDownload(order) && (
-                  <div style={{ marginTop: "18px" }}>
-                    <button className="primary-btn" onClick={() => handleDownload(order)}>
-                      {t.download}
+                  <div style={{ marginTop: 18 }}>
+                    <p style={{ marginBottom: 12 }}>
+                      {tx(
+                        "This file can be downloaded one time only.",
+                        "يمكن تحميل هذا الملف مرة واحدة فقط."
+                      )}
+                    </p>
+
+                    <button
+                      className="primary-btn"
+                      onClick={() => handleDownload(order)}
+                      disabled={downloadingOrderId === order.id}
+                    >
+                      {downloadingOrderId === order.id
+                        ? tx("Preparing download...", "جاري تجهيز التحميل...")
+                        : t.download}
                     </button>
                   </div>
                 )}

@@ -37,10 +37,19 @@ function Checkout() {
     async function loadProduct() {
       setLoadingProduct(true);
 
+      const productId = Number(id);
+
+      if (Number.isNaN(productId)) {
+        setProduct(null);
+        setLoadingProduct(false);
+        return;
+      }
+
       const { data, error } = await supabase
         .from("products")
         .select("*")
-        .eq("id", id)
+        .eq("id", productId)
+        .eq("is_active", true)
         .single();
 
       if (error || !data) {
@@ -122,6 +131,22 @@ function Checkout() {
   async function handleSubmit(event) {
     event.preventDefault();
 
+    if (!product) {
+      showToast(tx("Product not found.", "المنتج غير موجود."), "error");
+      return;
+    }
+
+    const currentUser = await getCurrentUser();
+
+    if (!currentUser) {
+      showToast(
+        tx("Please login first before placing an order.", "سجل دخول أولًا قبل تنفيذ الطلب."),
+        "error"
+      );
+      navigate("/login");
+      return;
+    }
+
     const validationErrors = validateForm();
     setErrors(validationErrors);
 
@@ -129,130 +154,163 @@ function Checkout() {
 
     setSubmitting(true);
 
-    const currentUser = await getCurrentUser();
+    try {
+      const { data: existingOrder } = await supabase
+        .from("orders")
+        .select("id, status")
+        .eq("user_id", currentUser.id)
+        .eq("product_id", product.id)
+        .in("status", ["pending", "confirmed"])
+        .limit(1)
+        .maybeSingle();
 
-    if (!currentUser) {
-      setSubmitting(false);
-      showToast(tx("Please login first before placing an order.", "سجل دخول أولًا قبل تنفيذ الطلب."), "error");
-      navigate("/login");
-      return;
-    }
-
-    let uploadedProofUrl = "";
-    let uploadedProofPath = "";
-
-    if (proofFile) {
-      const fileExt = proofFile.name.split(".").pop();
-      const fileName = `${currentUser.id}-${Date.now()}.${fileExt}`;
-      const filePath = fileName;
-
-      const { error: uploadError } = await supabase.storage
-        .from("payment-proofs")
-        .upload(filePath, proofFile);
-
-      if (uploadError) {
-        setSubmitting(false);
+      if (existingOrder) {
         showToast(
-          tx(`Proof upload failed: ${uploadError.message}`, `فشل رفع إثبات الدفع: ${uploadError.message}`),
+          tx(
+            "You already have an active order for this product.",
+            "لديك طلب نشط بالفعل لهذا المنتج."
+          ),
+          "error"
+        );
+        setSubmitting(false);
+        return;
+      }
+
+      let uploadedProofUrl = "";
+      let uploadedProofPath = "";
+
+      if (proofFile) {
+        const fileExt = proofFile.name.split(".").pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${fileExt}`;
+        const filePath = `${currentUser.id}/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("payment-proofs")
+          .upload(filePath, proofFile, { upsert: false });
+
+        if (uploadError) {
+          setSubmitting(false);
+          showToast(
+            tx(
+              `Proof upload failed: ${uploadError.message}`,
+              `فشل رفع إثبات الدفع: ${uploadError.message}`
+            ),
+            "error"
+          );
+          return;
+        }
+
+        uploadedProofPath = filePath;
+
+        const { data: publicUrlData } = supabase.storage
+          .from("payment-proofs")
+          .getPublicUrl(filePath);
+
+        uploadedProofUrl = publicUrlData?.publicUrl || "";
+      }
+
+      const { data: insertedOrder, error } = await supabase
+        .from("orders")
+        .insert([
+          {
+            user_id: currentUser.id,
+            product_id: product.id,
+            product_title: product.title,
+            product_price: product.price,
+            currency: product.currency,
+            customer_full_name: formData.fullName.trim(),
+            customer_email: formData.email.trim(),
+            customer_phone: formData.phone.trim(),
+            payment_method: formData.paymentMethod.trim(),
+            proof_file_name: proofFile ? proofFile.name : null,
+            proof_file_url: uploadedProofUrl,
+            proof_file_path: uploadedProofPath,
+            notes: formData.notes.trim() || null,
+            status: "pending",
+            download_enabled: false,
+            download_used: false,
+            download_used_at: null,
+          },
+        ])
+        .select()
+        .single();
+
+      setSubmitting(false);
+
+      if (error) {
+        console.error("Supabase insert error:", error);
+        showToast(
+          tx(
+            `There was an error saving the order: ${error.message}`,
+            `حدث خطأ أثناء حفظ الطلب: ${error.message}`
+          ),
           "error"
         );
         return;
       }
 
-      uploadedProofPath = filePath;
+      await Promise.allSettled([
+        createAuditLog({
+          action: "order_created",
+          entityType: "order",
+          entityId: insertedOrder?.id || `${currentUser.id}-${product.id}`,
+          description: `New order created for ${product.title || "Product"}`,
+          metadata: {
+            productId: product.id,
+            productTitle: product.title,
+            customerEmail: formData.email,
+            paymentMethod: formData.paymentMethod,
+          },
+        }),
 
-      const { data: publicUrlData } = supabase.storage
-        .from("payment-proofs")
-        .getPublicUrl(filePath);
+        sendAdminNotification({
+          subject: "Smart Flow - New Order Received",
+          html: `
+            <div>
+              <h2>New Order Received</h2>
+              <p>Order ID: ${insertedOrder?.id || "-"}</p>
+              <p>Product: ${product.title}</p>
+              <p>Price: ${product.price} ${product.currency}</p>
+              <p>Customer: ${formData.fullName}</p>
+              <p>Email: ${formData.email}</p>
+              <p>Phone: ${formData.phone}</p>
+              <p>Payment Method: ${formData.paymentMethod}</p>
+            </div>
+          `,
+        }),
 
-      uploadedProofUrl = publicUrlData?.publicUrl || "";
-    }
+        sendCustomerEmail({
+          to: formData.email.trim(),
+          subject: "Smart Flow - Order Received",
+          html: `
+            <div>
+              <h2>Your order has been received</h2>
+              <p>Product: ${product.title}</p>
+              <p>We will review your payment proof and update your order soon.</p>
+            </div>
+          `,
+        }),
+      ]);
 
-    const { data: insertedOrder, error } = await supabase
-      .from("orders")
-      .insert([
-        {
-          user_id: currentUser.id,
-          product_id: product.id,
-          product_title: product.title,
-          product_price: product.price,
-          currency: product.currency,
-          customer_full_name: formData.fullName,
-          customer_email: formData.email,
-          customer_phone: formData.phone,
-          payment_method: formData.paymentMethod,
-          proof_file_name: proofFile ? proofFile.name : null,
-          proof_file_url: uploadedProofUrl,
-          proof_file_path: uploadedProofPath,
-          notes: formData.notes,
-          status: "pending",
-          download_enabled: false,
-        },
-      ])
-      .select()
-      .single();
-
-    setSubmitting(false);
-
-    if (error) {
-      console.error("Supabase insert error:", error);
+      showToast(tx("Order submitted successfully.", "تم إرسال الطلب بنجاح."));
+      navigate("/order-success");
+    } catch (error) {
+      console.error(error);
+      setSubmitting(false);
       showToast(
-        tx(`There was an error saving the order: ${error.message}`, `حدث خطأ أثناء حفظ الطلب: ${error.message}`),
+        tx("Something went wrong while submitting your order.", "حدث خطأ أثناء إرسال الطلب."),
         "error"
       );
-      return;
     }
-
-    await createAuditLog({
-      action: "order_created",
-      entityType: "order",
-      entityId: insertedOrder?.id || `${currentUser.id}-${product.id}`,
-      description: `New order created for ${product.title || "Product"}`,
-      metadata: {
-        productId: product.id,
-        productTitle: product.title,
-        customerEmail: formData.email,
-        paymentMethod: formData.paymentMethod,
-      },
-    });
-
-    await sendAdminNotification({
-      subject: "Smart Flow - New Order Received",
-      html: `
-        <div>
-          <h2>New Order Received</h2>
-          <p>Order ID: ${insertedOrder?.id || "-"}</p>
-          <p>Product: ${product.title}</p>
-          <p>Price: ${product.price} ${product.currency}</p>
-          <p>Customer: ${formData.fullName}</p>
-          <p>Email: ${formData.email}</p>
-          <p>Phone: ${formData.phone}</p>
-          <p>Payment Method: ${formData.paymentMethod}</p>
-        </div>
-      `,
-    });
-
-    await sendCustomerEmail({
-      to: formData.email,
-      subject: "Smart Flow - Order Received",
-      html: `
-        <div>
-          <h2>Your order has been received</h2>
-          <p>Product: ${product.title}</p>
-          <p>We will review your payment proof and update your order soon.</p>
-        </div>
-      `,
-    });
-
-    showToast(tx("Order submitted successfully.", "تم إرسال الطلب بنجاح."));
-    navigate("/order-success");
   }
 
   if (loadingProduct) {
     return (
       <PageWrapper>
         <div className="container page-section">
-          <h2>{tx("Loading product...", "جاري تحميل المنتج...")}</h2>
+          <div className="details-box">
+            <h2>{tx("Loading product...", "جاري تحميل المنتج...")}</h2>
+          </div>
         </div>
       </PageWrapper>
     );
@@ -262,7 +320,9 @@ function Checkout() {
     return (
       <PageWrapper>
         <div className="container page-section">
-          <h2>{tx("Product not found", "المنتج غير موجود")}</h2>
+          <div className="details-box">
+            <h2>{tx("Product not found", "المنتج غير موجود")}</h2>
+          </div>
         </div>
       </PageWrapper>
     );

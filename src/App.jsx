@@ -26,15 +26,14 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AdminUsers from "./pages/AdminUsers";
 import AdminCustomRequests from "./pages/AdminCustomRequests";
 import VerifyOtp from "./pages/VerifyOtp";
-import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword";
+
 function HomePage() {
   return (
     <>
       <Hero />
       <main>
         <About />
-        <Products />
+        <Products featuredOnly limit={6} />
       </main>
     </>
   );
@@ -57,17 +56,17 @@ function AnimatedRoutes() {
         <Route path="/product/:id" element={<ProductDetails />} />
         <Route path="/checkout/:id" element={<Checkout />} />
         <Route path="/order-success" element={<OrderSuccess />} />
-<Route path="/verify-otp" element={<VerifyOtp />} />
-<Route path="/forgot-password" element={<ForgotPassword />} />
-<Route path="/reset-password" element={<ResetPassword />} />
-<Route
-  path="/admin-logs"
-  element={
-    <AdminRoute>
-      <AdminLogs />
-    </AdminRoute>
-  }
-/>
+        <Route path="/verify-otp" element={<VerifyOtp />} />
+
+        <Route
+          path="/admin-logs"
+          element={
+            <AdminRoute>
+              <AdminLogs />
+            </AdminRoute>
+          }
+        />
+
         <Route
           path="/orders"
           element={

@@ -31,7 +31,7 @@ function Login() {
     setLoading(true);
 
     const { data, error } = await supabase.auth.signInWithPassword({
-      email: formData.email,
+      email: formData.email.trim(),
       password: formData.password,
     });
 
@@ -59,59 +59,78 @@ function Login() {
     }
 
     setLoading(false);
-    navigate("/");
+    navigate("/my-orders");
   }
 
   return (
     <PageWrapper>
       <div className="container page-section">
-        <div className="details-box auth-box">
-          <h1>{t.login}</h1>
+        <div className="auth-shell">
+          <div className="auth-side">
+            <span className="section-kicker">
+              {tx("Welcome Back", "أهلًا بعودتك")}
+            </span>
 
-          <p className="details-description">
-            {tx("Login to manage and track your orders.", "سجل دخولك لمتابعة وإدارة طلباتك.")}
-          </p>
+            <h1>{t.login}</h1>
 
-          <form className="checkout-form" onSubmit={handleSubmit}>
-            <div className="form-group">
-              <label>{t.email}</label>
-              <input
-                type="email"
-                name="email"
-                placeholder={tx("Enter your email", "ادخل بريدك الإلكتروني")}
-                value={formData.email}
-                onChange={handleChange}
-                required
-              />
+            <p className="details-description">
+              {tx(
+                "Login to manage your orders, access your purchased files, and continue your workflow smoothly.",
+                "سجل دخولك لإدارة طلباتك والوصول لملفاتك المشتراة ومتابعة شغلك بسهولة."
+              )}
+            </p>
+
+            <div className="auth-benefits">
+              <span>{tx("Track your orders easily", "تابع طلباتك بسهولة")}</span>
+              <span>{tx("Access your downloads", "الوصول إلى التحميلات")}</span>
+              <span>{tx("Fast and secure login", "دخول سريع وآمن")}</span>
             </div>
+          </div>
 
-            <div className="form-group">
-              <label>{t.password}</label>
-              <input
-                type="password"
-                name="password"
-                placeholder={tx("Enter your password", "ادخل كلمة المرور")}
-                value={formData.password}
-                onChange={handleChange}
-                required
-              />
-            </div>
+          <div className="details-box auth-box auth-form-panel">
+            <h2>{t.login}</h2>
 
-            {errorMessage && <small className="error-text">{errorMessage}</small>}
+            <form className="checkout-form" onSubmit={handleSubmit}>
+              <div className="form-group">
+                <label>{t.email}</label>
+                <input
+                  type="email"
+                  name="email"
+                  placeholder={tx("Enter your email", "ادخل بريدك الإلكتروني")}
+                  value={formData.email}
+                  onChange={handleChange}
+                  autoComplete="email"
+                  required
+                />
+              </div>
 
-            <button type="submit" className="primary-btn" disabled={loading}>
-              {loading ? tx("Logging in...", "جاري تسجيل الدخول...") : t.login}
-            </button>
-          </form>
+              <div className="form-group">
+                <label>{t.password}</label>
+                <input
+                  type="password"
+                  name="password"
+                  placeholder={tx("Enter your password", "ادخل كلمة المرور")}
+                  value={formData.password}
+                  onChange={handleChange}
+                  autoComplete="current-password"
+                  required
+                />
+              </div>
 
-          <p style={{ marginTop: "16px" }}>
-            <Link to="/forgot-password">{t.forgotPassword}</Link>
-          </p>
+              {errorMessage ? <small className="error-text">{errorMessage}</small> : null}
 
-          <p style={{ marginTop: "16px" }}>
-            {tx("Don't have an account?", "ليس لديك حساب؟")}{" "}
-            <Link to="/register">{t.register}</Link>
-          </p>
+              <button type="submit" className="primary-btn" disabled={loading}>
+                {loading ? tx("Logging in...", "جاري تسجيل الدخول...") : t.login}
+              </button>
+            </form>
+
+            <p className="auth-links-inline">
+              {tx("Don't have an account?", "ليس لديك حساب؟")}{" "}
+              <Link to="/register" className="muted-link">
+                {t.register}
+              </Link>
+            </p>
+          </div>
         </div>
       </div>
     </PageWrapper>
