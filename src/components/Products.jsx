@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import ProductCard from "./ProductCard";
 import { getProducts } from "../lib/productService";
+import { StaggerContainer, StaggerItem, SlideUp } from "./animations";
 
 const productTypes = ["all", "system", "template", "bundle", "service", "free"];
 
@@ -41,15 +42,15 @@ function Products({ featuredOnly = false, showHeader = true, limit = null }) {
     <section className="products-section">
       <div className="container">
         {showHeader && (
-          <div className="section-title-row">
+          <SlideUp className="section-title-row">
             <span className="section-kicker">{featuredOnly ? "Featured Collection" : "Marketplace"}</span>
             <h2>{featuredOnly ? "Best-selling Excel systems" : "Browse Excel systems, templates, and services"}</h2>
             <p className="section-subtitle">Search, compare, and purchase digital Excel products with manual-payment delivery, licensing, and support workflows ready for production.</p>
-          </div>
+          </SlideUp>
         )}
 
         {!featuredOnly && (
-          <div className="catalog-toolbar">
+          <SlideUp className="catalog-toolbar">
             <input aria-label="Search products" placeholder="Search dashboards, CRM, inventory..." value={search} onChange={(e) => setSearch(e.target.value)} />
             <select value={type} onChange={(e) => setType(e.target.value)} aria-label="Product type">
               {productTypes.map((item) => <option key={item} value={item}>{item === "all" ? "All types" : item}</option>)}
@@ -66,11 +67,11 @@ function Products({ featuredOnly = false, showHeader = true, limit = null }) {
               <option value="price_asc">Price low to high</option>
               <option value="price_desc">Price high to low</option>
             </select>
-          </div>
+          </SlideUp>
         )}
 
         {!featuredOnly && categories.length > 0 && (
-          <div className="filter-chip-row">{categories.map((category) => <span className="tag-chip" key={category}>{category}</span>)}</div>
+          <StaggerContainer className="filter-chip-row">{categories.map((category) => <StaggerItem as="span" className="tag-chip" key={category}>{category}</StaggerItem>)}</StaggerContainer>
         )}
 
         {loading ? (
@@ -78,11 +79,13 @@ function Products({ featuredOnly = false, showHeader = true, limit = null }) {
         ) : filtered.length === 0 ? (
           <div className="products-empty">No products match your filters. Try another search or request a custom Excel system.</div>
         ) : (
-          <div className="products-grid">
+          <StaggerContainer className="products-grid">
             {filtered.map((product) => (
+              <StaggerItem key={product.id}>
               <ProductCard key={product.id} id={product.slug || product.id} title={product.title} description={product.short_description || product.description} price={product.sale_price || product.price} oldPrice={product.old_price || product.price} currency={product.currency} category={product.category} tags={Array.isArray(product.tags) ? product.tags : []} featured={product.featured} productType={product.product_type} compatibility={product.compatibility} version={product.version} image={product.cover_image_url || product.image_urls?.[0] || product.image_url || ""} />
+              </StaggerItem>
             ))}
-          </div>
+          </StaggerContainer>
         )}
       </div>
     </section>

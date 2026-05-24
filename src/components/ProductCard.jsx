@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { motion as Motion } from "framer-motion";
+import { motion as Motion, useReducedMotion } from "framer-motion";
 import { formatPrice } from "../lib/utils";
 
 function ProductCard({
@@ -17,10 +17,23 @@ function ProductCard({
   compatibility,
   version,
 }) {
+  const reduce = useReducedMotion();
   const shortDescription = description && description.length > 118 ? `${description.slice(0, 118)}...` : description || "No description available yet.";
 
   return (
-    <Motion.article className="product-card" whileHover={{ y: -6 }} whileTap={{ scale: 0.99 }} transition={{ type: "spring", stiffness: 260, damping: 20 }}>
+    <Motion.article
+      className="product-card animate-card-hover"
+      variants={{
+        hidden: { opacity: 0, y: 18 },
+        show: { opacity: 1, y: 0, transition: { duration: 0.34, ease: [0.22, 1, 0.36, 1] } },
+      }}
+      initial={reduce ? false : "hidden"}
+      whileInView={reduce ? undefined : "show"}
+      viewport={{ once: true, margin: "-30px" }}
+      whileHover={reduce ? undefined : { y: -7 }}
+      whileTap={reduce ? undefined : { scale: 0.99 }}
+      transition={{ type: "spring", stiffness: 260, damping: 22 }}
+    >
       <div className="product-card-media">
         {image ? <img src={image} alt={title} className="product-image" /> : <div className="product-card-placeholder">Excel product</div>}
         {featured && <span className="featured-badge">Featured</span>}

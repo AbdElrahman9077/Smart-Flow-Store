@@ -91,6 +91,12 @@ img {
   backdrop-filter: blur(18px);
   background: color-mix(in srgb, var(--surface) 88%, transparent);
   border-bottom: 1px solid var(--border);
+  transition: box-shadow 0.24s ease, background 0.24s ease, border-color 0.24s ease;
+}
+
+.navbar:hover,
+.navbar:focus-within {
+  box-shadow: 0 12px 34px rgba(15, 23, 42, 0.08);
 }
 
 .nav-content {
@@ -122,6 +128,7 @@ img {
 
 .nav-links a,
 .nav-text-btn {
+  position: relative;
   display: inline-flex;
   align-items: center;
   min-height: 38px;
@@ -131,6 +138,25 @@ img {
   background: transparent;
   font-size: 14px;
   font-weight: 750;
+  transition: color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+}
+
+.nav-links a::after {
+  content: "";
+  position: absolute;
+  inset-inline: 14px;
+  bottom: 5px;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--primary);
+  transform: scaleX(0);
+  transform-origin: center;
+  transition: transform 0.2s ease;
+}
+
+.nav-links a:hover::after,
+.nav-links a.active::after {
+  transform: scaleX(1);
 }
 
 .nav-links a:hover,
@@ -224,19 +250,26 @@ img {
   position: absolute;
   top: calc(100% + 10px);
   inset-inline-end: 0;
-  display: none;
+  display: grid;
+  gap: 4px;
   width: 250px;
   padding: 10px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(8px) scale(0.98);
+  transform-origin: top right;
+  transition: opacity 0.18s ease, transform 0.18s ease;
 }
 
 .nav-menu:hover .nav-menu-panel,
 .nav-menu:focus-within .nav-menu-panel {
-  display: grid;
-  gap: 4px;
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0) scale(1);
 }
 
 .nav-menu-panel a {
@@ -420,6 +453,15 @@ img {
 
 .hero-product-panel {
   padding: 22px;
+}
+
+.hero-float {
+  animation: premiumFloat 7s ease-in-out infinite;
+}
+
+@keyframes premiumFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
 }
 
 .hero-panel-header,
@@ -643,6 +685,17 @@ img {
   box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 13%, transparent);
 }
 
+.error-text {
+  color: var(--danger);
+  font-weight: 800;
+  animation: errorIn 0.18s ease both;
+}
+
+@keyframes errorIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 .filter-chip-row,
 .card-tags,
 .details-meta {
@@ -658,10 +711,15 @@ img {
 .product-card {
   overflow: hidden;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  will-change: transform;
 }
 
 .product-card:hover {
   box-shadow: var(--shadow);
+}
+
+.product-card:hover .product-image {
+  transform: scale(1.045);
 }
 
 .product-card-media {
@@ -677,6 +735,7 @@ img {
 
 .product-image {
   height: 220px;
+  transition: transform 0.45s ease;
 }
 
 .product-card-placeholder,
@@ -696,6 +755,12 @@ img {
   border-radius: 999px;
   font-size: 12px;
   font-weight: 900;
+  animation: badgeIn 0.28s ease both;
+}
+
+@keyframes badgeIn {
+  from { opacity: 0; transform: translateY(-4px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .product-card-body {
@@ -914,11 +979,6 @@ img {
   color: var(--muted);
 }
 
-.error-text {
-  color: var(--danger);
-  font-weight: 800;
-}
-
 .auth-shell {
   display: grid;
   grid-template-columns: 0.92fr 1.08fr;
@@ -966,6 +1026,45 @@ img {
 .order-card p {
   color: var(--muted);
   margin-top: 8px;
+}
+
+.order-card,
+.faq-item,
+.feature-card,
+.stat-card,
+.workspace-nav-link,
+.quick-link {
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+
+.order-card:hover,
+.feature-card:hover,
+.stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow);
+}
+
+.faq-question {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  color: var(--text);
+  background: transparent;
+  font-weight: 900;
+  text-align: start;
+}
+
+.faq-answer {
+  margin-top: 12px;
+  color: var(--muted);
+  animation: accordionIn 0.22s ease both;
+}
+
+@keyframes accordionIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .order-meta-row {
@@ -1026,6 +1125,7 @@ img {
 }
 
 .workspace-nav-link {
+  position: relative;
   min-height: 42px;
   display: flex;
   align-items: center;
@@ -1035,10 +1135,26 @@ img {
   font-weight: 850;
 }
 
+.workspace-nav-link::before {
+  content: "";
+  position: absolute;
+  inset-block: 10px;
+  inset-inline-start: 0;
+  width: 3px;
+  border-radius: 999px;
+  background: var(--primary);
+  transform: scaleY(0);
+  transition: transform 0.2s ease;
+}
+
 .workspace-nav-link:hover,
 .workspace-nav-link.active {
   background: color-mix(in srgb, var(--primary) 9%, transparent);
   color: var(--primary);
+}
+
+.workspace-nav-link.active::before {
+  transform: scaleY(1);
 }
 
 .workspace-content {
@@ -1086,10 +1202,64 @@ img {
   color: white;
   font-weight: 850;
   box-shadow: var(--shadow);
+  animation: toastSlide 0.24s ease both;
+}
+
+@keyframes toastSlide {
+  from { opacity: 0; transform: translateY(-10px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .toast-success { background: var(--success); }
 .toast-error { background: var(--danger); }
+
+.animate-page {
+  transform-origin: top center;
+}
+
+.animated-list > *,
+.orders-grid > *,
+.quick-action-grid > *,
+.stats-grid > *,
+.feature-card-grid > *,
+.profile-grid > * {
+  animation: contentReveal 0.38s ease both;
+}
+
+.orders-grid > *:nth-child(2),
+.quick-action-grid > *:nth-child(2),
+.stats-grid > *:nth-child(2),
+.feature-card-grid > *:nth-child(2) { animation-delay: 0.04s; }
+.orders-grid > *:nth-child(3),
+.quick-action-grid > *:nth-child(3),
+.stats-grid > *:nth-child(3),
+.feature-card-grid > *:nth-child(3) { animation-delay: 0.08s; }
+.orders-grid > *:nth-child(4),
+.quick-action-grid > *:nth-child(4),
+.stats-grid > *:nth-child(4),
+.feature-card-grid > *:nth-child(4) { animation-delay: 0.12s; }
+
+@keyframes contentReveal {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.button-loading::before {
+  content: "";
+  width: 14px;
+  height: 14px;
+  margin-inline-end: 8px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  display: inline-block;
+  vertical-align: -2px;
+  animation: spin 0.75s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
 
 .route-loading,
 .page-loading {
@@ -1232,5 +1402,16 @@ img {
   .about-section,
   .conversion-section {
     padding: 42px 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.001ms !important;
   }
 }

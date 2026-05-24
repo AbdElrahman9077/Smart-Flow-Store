@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
+import { AnimatedSection, StaggerContainer, StaggerItem } from "./animations";
 
 function About() {
   const { tx } = useAppContext();
@@ -20,7 +21,7 @@ function About() {
   ];
 
   return (
-    <section className="about-section">
+    <AnimatedSection className="about-section">
       <div className="container split-section">
         <div>
           <span className="section-kicker">{tx("Why Excel Store", "لماذا Excel Store")}</span>
@@ -36,16 +37,16 @@ function About() {
             <Link to="/about" className="secondary-link-btn">{tx("Learn more", "اعرف المزيد")}</Link>
           </div>
         </div>
-        <div className="feature-card-grid">
+        <StaggerContainer className="feature-card-grid">
           {values.map((item) => (
-            <article className="feature-card" key={item.title}>
+            <StaggerItem as="article" className="feature-card" key={item.title}>
               <h3>{item.title}</h3>
               <p>{item.text}</p>
-            </article>
+            </StaggerItem>
           ))}
-        </div>
+        </StaggerContainer>
       </div>
-    </section>
+    </AnimatedSection>
   );
 }
 

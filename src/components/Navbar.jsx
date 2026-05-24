@@ -1,5 +1,5 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import { motion as Motion } from "framer-motion";
+import { motion as Motion, useScroll, useReducedMotion } from "framer-motion";
 import { signOutUser } from "../lib/auth";
 import { useAppContext } from "../context/AppContext";
 import useAdmin from "../hooks/useAdmin";
@@ -23,6 +23,8 @@ function Navbar() {
   const navigate = useNavigate();
   const { t, toggleLanguage, language, toggleTheme, theme } = useAppContext();
   const { user, isAdmin, loading } = useAdmin();
+  const { scrollY } = useScroll();
+  const reduce = useReducedMotion();
 
   async function handleLogout() {
     await signOutUser();
@@ -40,7 +42,13 @@ function Navbar() {
   ];
 
   return (
-    <Motion.nav className="navbar" initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+    <Motion.nav
+      className="navbar"
+      initial={reduce ? false : { opacity: 0, y: -12 }}
+      animate={reduce ? undefined : { opacity: 1, y: 0 }}
+      style={{ "--nav-shadow-progress": scrollY }}
+      transition={{ duration: 0.3 }}
+    >
       <div className="container nav-content">
         <h2 className="logo">
           <Link to="/">Excel Store</Link>

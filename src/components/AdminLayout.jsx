@@ -1,4 +1,5 @@
 import { NavLink } from "react-router-dom";
+import { StaggerContainer, StaggerItem, SlideIn } from "./animations";
 
 const adminLinks = [
   { to: "/admin/dashboard", label: "Dashboard" },
@@ -18,20 +19,23 @@ const adminLinks = [
 function AdminLayout({ children }) {
   return (
     <div className="workspace-layout admin-layout">
+      <SlideIn className="workspace-sidebar-shell">
       <aside className="workspace-sidebar" aria-label="Admin navigation">
         <div className="workspace-sidebar-title">Admin</div>
-        <nav className="workspace-nav">
+        <StaggerContainer as="nav" className="workspace-nav">
           {adminLinks.map((link) => (
+            <StaggerItem key={link.to}>
             <NavLink
-              key={link.to}
               to={link.to}
               className={({ isActive }) => `workspace-nav-link ${isActive ? "active" : ""}`}
             >
               {link.label}
             </NavLink>
+            </StaggerItem>
           ))}
-        </nav>
+        </StaggerContainer>
       </aside>
+      </SlideIn>
       <div className="workspace-content">{children}</div>
     </div>
   );

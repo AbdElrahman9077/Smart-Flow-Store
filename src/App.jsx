@@ -14,6 +14,7 @@ import PageLoadingSpinner from "./components/PageLoadingSpinner";
 import Hero from "./components/Hero";
 import About from "./components/About";
 import Products from "./components/Products";
+import { AnimatedSection, StaggerContainer, StaggerItem } from "./components/animations";
 
 // ── Lazy-load pages for better performance
 const ProductDetails = lazy(() => import("./pages/ProductDetails"));
@@ -77,19 +78,25 @@ function HomePage() {
       <main>
         <About />
         <Products featuredOnly limit={6} />
-        <section className="conversion-section">
+        <AnimatedSection className="conversion-section">
           <div className="container conversion-grid">
-            <div>
+            <StaggerContainer>
+              <StaggerItem>
               <span className="section-kicker">Custom Excel systems</span>
+              </StaggerItem>
+              <StaggerItem>
               <h2>Need a workflow built around your exact business?</h2>
+              </StaggerItem>
+              <StaggerItem>
               <p>Send your requirements and receive a structured quote for dashboards, trackers, CRM sheets, inventory systems, or finance models.</p>
-            </div>
+              </StaggerItem>
+            </StaggerContainer>
             <div className="conversion-actions">
               <a className="primary-link-btn" href="/custom-request">Request a custom system</a>
               <a className="secondary-link-btn" href="/free-templates">Explore free templates</a>
             </div>
           </div>
-        </section>
+        </AnimatedSection>
       </main>
     </>
   );

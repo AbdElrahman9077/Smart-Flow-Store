@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
+import { StaggerContainer, StaggerItem, ScaleIn } from "./animations";
 
 function Hero() {
   const { t, tx } = useAppContext();
@@ -7,27 +8,39 @@ function Hero() {
   return (
     <header className="hero">
       <div className="container hero-grid">
-        <div className="hero-copy">
+        <StaggerContainer className="hero-copy">
+          <StaggerItem>
           <span className="hero-kicker">{tx("Premium Excel marketplace", "منصة احترافية لحلول Excel")}</span>
+          </StaggerItem>
+          <StaggerItem>
           <h1>{t.heroTitle}</h1>
+          </StaggerItem>
+          <StaggerItem>
           <p className="subtitle">{t.heroSubtitle}</p>
+          </StaggerItem>
+          <StaggerItem>
           <p className="description">{t.heroDescription}</p>
+          </StaggerItem>
+          <StaggerItem>
           <div className="hero-search" role="search">
             <input aria-label="Find Excel products" placeholder={tx("Search dashboards, inventory, CRM, finance...", "ابحث عن لوحات متابعة، مخزون، مبيعات، مالية...")} />
             <Link to="/products" className="primary-link-btn">{t.browseProducts}</Link>
           </div>
+          </StaggerItem>
+          <StaggerItem>
           <div className="hero-buttons">
             <Link to="/products" className="hero-link-btn">{t.browseProducts}</Link>
             <Link to="/custom-request" className="hero-link-btn secondary">{t.requestCustomWork}</Link>
           </div>
-          <div className="trust-strip" aria-label="Marketplace trust signals">
-            <span>{tx("Secure delivery", "تسليم آمن")}</span>
-            <span>{tx("License management", "إدارة التراخيص")}</span>
-            <span>{tx("Admin confirmation", "تأكيد إداري للدفع")}</span>
-          </div>
-        </div>
+          </StaggerItem>
+          <StaggerContainer className="trust-strip" aria-label="Marketplace trust signals">
+            <StaggerItem as="span">{tx("Secure delivery", "تسليم آمن")}</StaggerItem>
+            <StaggerItem as="span">{tx("License management", "إدارة التراخيص")}</StaggerItem>
+            <StaggerItem as="span">{tx("Admin confirmation", "تأكيد إداري للدفع")}</StaggerItem>
+          </StaggerContainer>
+        </StaggerContainer>
 
-        <div className="hero-product-panel" aria-label="Excel operations preview">
+        <ScaleIn className="hero-product-panel hero-float" aria-label="Excel operations preview">
           <div className="hero-panel-header">
             <span>{tx("Operations dashboard", "لوحة عمليات")}</span>
             <strong>Excel Store Pro</strong>
@@ -50,7 +63,7 @@ function Hero() {
             <span>{tx("Sales CRM", "إدارة المبيعات")}</span>
             <span>{tx("Finance planner", "تخطيط مالي")}</span>
           </div>
-        </div>
+        </ScaleIn>
       </div>
     </header>
   );
