@@ -7,18 +7,46 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+dist-ssr/
+build/
+
+# Environment secrets — NEVER commit real .env files
+.env
+.env.*
+!.env.example
+
+# Supabase temp
+supabase/.temp/
+
+# Project index exports (local utility)
+_project_index_*/
+*.zip
+
+# OS artifacts
+desktop.ini
+.DS_Store
+Thumbs.db
 
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
-.idea
-.DS_Store
+.vs/
+.idea/
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+
+# Deploy artifacts
+.vercel/
+.netlify/
+.cache/
+
+# Coverage
+coverage/
