@@ -109,7 +109,7 @@ export async function adminGetOrders({ search = "", status = "", paymentStatus =
 /**
  * Admin: Mark order as paid — updates status and generates license if needed
  */
-export async function adminConfirmOrderPayment(order, actorId) {
+export async function adminConfirmOrderPayment(order) {
   const now = new Date().toISOString();
 
   const { error: updateError } = await supabase

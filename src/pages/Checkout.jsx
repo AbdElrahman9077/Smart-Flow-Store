@@ -2,6 +2,7 @@ import PageWrapper from "../components/PageWrapper";
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
+import { getProductById, getProductBySlug } from "../lib/productService";
 import { getCurrentUser } from "../lib/auth";
 import { useToast } from "../context/ToastContext";
 import { useAppContext } from "../context/AppContext";
@@ -37,28 +38,14 @@ function Checkout() {
     async function loadProduct() {
       setLoadingProduct(true);
 
-      const productId = Number(id);
-
-      if (Number.isNaN(productId)) {
+      const result = Number.isNaN(Number(id)) ? await getProductBySlug(id) : await getProductById(id);
+      if (!result.data) {
         setProduct(null);
         setLoadingProduct(false);
         return;
       }
 
-      const { data, error } = await supabase
-        .from("products")
-        .select("*")
-        .eq("id", productId)
-        .eq("is_active", true)
-        .single();
-
-      if (error || !data) {
-        setProduct(null);
-        setLoadingProduct(false);
-        return;
-      }
-
-      setProduct(data);
+      setProduct(result.data);
       setLoadingProduct(false);
     }
 

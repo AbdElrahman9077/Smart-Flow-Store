@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion as Motion } from "framer-motion";
 import { signOutUser } from "../lib/auth";
 import { useAppContext } from "../context/AppContext";
 import useAdmin from "../hooks/useAdmin";
@@ -15,7 +15,7 @@ function Navbar() {
   }
 
   return (
-    <motion.nav
+    <Motion.nav
       className="navbar"
       initial={{ opacity: 0, y: -18 }}
       animate={{ opacity: 1, y: 0 }}
@@ -96,7 +96,7 @@ function Navbar() {
           </a>
         </div>
       </div>
-    </motion.nav>
+    </Motion.nav>
   );
 }
 

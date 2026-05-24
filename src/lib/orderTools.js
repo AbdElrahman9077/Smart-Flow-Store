@@ -13,7 +13,7 @@ export async function confirmOrderAndEnableDownload(orderId) {
 
 export async function getSignedProductDownload(filePath) {
   return await supabase.storage
-    .from("products-files")
+    .from("product-files")
     .createSignedUrl(filePath, 300);
 }
 

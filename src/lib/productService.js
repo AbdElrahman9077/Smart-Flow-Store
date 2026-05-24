@@ -1,5 +1,4 @@
 import { supabase } from "./supabase";
-import { generateLicenseKey } from "./utils";
 
 /**
  * Product Service
@@ -174,7 +173,7 @@ export async function getProductById(id) {
 
     if (error) throw error;
     return { data, error: null };
-  } catch (err) {
+  } catch {
     const fallback = FALLBACK_PRODUCTS.find((p) => p.id === numId);
     return { data: fallback || null, error: fallback ? null : "Product not found" };
   }

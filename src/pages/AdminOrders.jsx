@@ -8,6 +8,7 @@ import {
   sendCustomerEmail,
   createAuditLog,
 } from "../lib/notifications";
+import { adminConfirmOrderPayment } from "../lib/orderService";
 
 function AdminOrders() {
   const [orders, setOrders] = useState([]);
@@ -174,10 +175,9 @@ function AdminOrders() {
       payload.download_used_at = order.download_used_at || now;
     }
 
-    const { error } = await supabase
-      .from("orders")
-      .update(payload)
-      .eq("id", order.id);
+    const { error } = normalized === "confirmed"
+      ? await adminConfirmOrderPayment(order)
+      : await supabase.from("orders").update(payload).eq("id", order.id);
 
     setUpdatingOrderId(null);
 

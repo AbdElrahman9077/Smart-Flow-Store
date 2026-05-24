@@ -27,7 +27,7 @@ function useAdmin() {
 
     const { data: profileData, error: profileError } = await supabase
       .from("profiles")
-      .select("id, email, is_admin, full_name")
+      .select("id, email, is_admin, role, status, full_name")
       .eq("id", currentUser.id)
       .single();
 
@@ -39,7 +39,7 @@ function useAdmin() {
     }
 
     setProfile(profileData);
-    setIsAdmin(!!profileData.is_admin);
+    setIsAdmin(profileData.status !== "suspended" && (profileData.is_admin === true || profileData.role === "admin"));
     setLoading(false);
   }, []);
 
