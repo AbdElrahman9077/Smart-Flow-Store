@@ -14,6 +14,21 @@ function Navbar() {
     navigate("/");
   }
 
+  const adminLinks = [
+    ["/admin/dashboard", "Dashboard"],
+    ["/admin/products", "Products"],
+    ["/admin/orders", "Orders"],
+    ["/admin/customers", "Customers"],
+    ["/admin/licenses", "Licenses"],
+    ["/admin/downloads", "Downloads"],
+    ["/admin/coupons", "Coupons"],
+    ["/admin/custom-requests", "Custom Requests"],
+    ["/admin/support", "Support"],
+    ["/admin/reviews", "Reviews"],
+    ["/admin/logs", "Logs"],
+    ["/admin/settings", "Settings"],
+  ];
+
   return (
     <Motion.nav
       className="navbar"
@@ -50,7 +65,11 @@ function Navbar() {
               <li><Link to="/products">{t.products}</Link></li>
               <li><Link to="/about">{t.about}</Link></li>
               <li><Link to="/contact">{t.contact}</Link></li>
-              <li><Link to="/my-orders">{t.myOrders}</Link></li>
+              <li><Link to="/account">Account</Link></li>
+              <li><Link to="/account/orders">{t.myOrders}</Link></li>
+              <li><Link to="/account/downloads">Downloads</Link></li>
+              <li><Link to="/account/licenses">Licenses</Link></li>
+              <li><Link to="/account/support">Support</Link></li>
               <li>
                 <Link to="/custom-request">
                   {t.customRequest || "Custom Request"}
@@ -58,14 +77,14 @@ function Navbar() {
               </li>
 
               {!loading && isAdmin && (
-                <>
-                  <li><Link to="/admin-dashboard">{t.adminDashboard || "Admin Dashboard"}</Link></li>
-                  <li><Link to="/admin-products">{t.adminProducts || "Admin Products"}</Link></li>
-                  <li><Link to="/admin-orders">{t.adminOrders || "Admin Orders"}</Link></li>
-                  <li><Link to="/admin-users">{t.adminUsers || "Admin Users"}</Link></li>
-                  <li><Link to="/admin-custom-requests">{t.adminCustomRequests || "Custom Requests"}</Link></li>
-                  <li><Link to="/admin-logs">{t.adminLogs || "Admin Logs"}</Link></li>
-                </>
+                <li className="nav-menu">
+                  <Link to="/admin/dashboard" className="nav-outline-btn">{t.admin || "Admin"}</Link>
+                  <div className="nav-menu-panel">
+                    {adminLinks.map(([to, label]) => (
+                      <Link key={to} to={to}>{label}</Link>
+                    ))}
+                  </div>
+                </li>
               )}
 
               <li>

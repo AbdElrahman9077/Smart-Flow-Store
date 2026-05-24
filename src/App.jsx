@@ -6,6 +6,8 @@ import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import AdminRoute from "./components/AdminRoute";
 import CustomerRoute from "./components/CustomerRoute";
+import AdminLayout from "./components/AdminLayout";
+import AccountLayout from "./components/AccountLayout";
 import PageLoadingSpinner from "./components/PageLoadingSpinner";
 
 // ── Home components (eagerly loaded)
@@ -42,6 +44,7 @@ const AccountDownloads = lazy(() => import("./pages/account/AccountDownloads"));
 const AccountLicenses = lazy(() => import("./pages/account/AccountLicenses"));
 const AccountCustomRequests = lazy(() => import("./pages/account/AccountCustomRequests"));
 const AccountSupport = lazy(() => import("./pages/account/AccountSupport"));
+const AccountProfile = lazy(() => import("./pages/account/AccountProfile"));
 
 // ── Admin Pages
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
@@ -58,6 +61,14 @@ const AdminLogs = lazy(() => import("./pages/AdminLogs"));
 const AdminSettings = lazy(() => import("./pages/AdminSettings"));
 // OrdersPage legacy — redirect to admin-orders
 const OrdersPage = lazy(() => import("./pages/OrdersPage"));
+
+function withAccountLayout(page) {
+  return <CustomerRoute><AccountLayout>{page}</AccountLayout></CustomerRoute>;
+}
+
+function withAdminLayout(page) {
+  return <AdminRoute><AdminLayout>{page}</AdminLayout></AdminRoute>;
+}
 
 function HomePage() {
   return (
@@ -108,40 +119,41 @@ function AnimatedRoutes() {
           <Route path="/my-orders" element={<CustomerRoute><MyOrders /></CustomerRoute>} />
 
           {/* ─── Customer Portal (Account) ─── */}
-          <Route path="/account" element={<CustomerRoute><AccountPage /></CustomerRoute>} />
-          <Route path="/account/orders" element={<CustomerRoute><AccountOrders /></CustomerRoute>} />
-          <Route path="/account/downloads" element={<CustomerRoute><AccountDownloads /></CustomerRoute>} />
-          <Route path="/account/licenses" element={<CustomerRoute><AccountLicenses /></CustomerRoute>} />
-          <Route path="/account/custom-requests" element={<CustomerRoute><AccountCustomRequests /></CustomerRoute>} />
-          <Route path="/account/support" element={<CustomerRoute><AccountSupport /></CustomerRoute>} />
+          <Route path="/account" element={withAccountLayout(<AccountPage />)} />
+          <Route path="/account/orders" element={withAccountLayout(<AccountOrders />)} />
+          <Route path="/account/downloads" element={withAccountLayout(<AccountDownloads />)} />
+          <Route path="/account/licenses" element={withAccountLayout(<AccountLicenses />)} />
+          <Route path="/account/custom-requests" element={withAccountLayout(<AccountCustomRequests />)} />
+          <Route path="/account/support" element={withAccountLayout(<AccountSupport />)} />
+          <Route path="/account/profile" element={withAccountLayout(<AccountProfile />)} />
 
           {/* ─── Admin Routes ─── */}
           <Route path="/admin" element={<AdminRoute><Navigate to="/admin/dashboard" replace /></AdminRoute>} />
-          <Route path="/admin/dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
-          <Route path="/admin/products" element={<AdminRoute><AdminProducts /></AdminRoute>} />
-          <Route path="/admin/orders" element={<AdminRoute><AdminOrders /></AdminRoute>} />
-          <Route path="/admin/customers" element={<AdminRoute><AdminUsers /></AdminRoute>} />
-          <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
-          <Route path="/admin/licenses" element={<AdminRoute><AdminLicenses /></AdminRoute>} />
-          <Route path="/admin/downloads" element={<AdminRoute><AdminDownloads /></AdminRoute>} />
-          <Route path="/admin/coupons" element={<AdminRoute><AdminCoupons /></AdminRoute>} />
-          <Route path="/admin/custom-requests" element={<AdminRoute><AdminCustomRequests /></AdminRoute>} />
-          <Route path="/admin/support" element={<AdminRoute><AdminSupport /></AdminRoute>} />
-          <Route path="/admin/reviews" element={<AdminRoute><AdminReviews /></AdminRoute>} />
-          <Route path="/admin/logs" element={<AdminRoute><AdminLogs /></AdminRoute>} />
-          <Route path="/admin/settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />
-          <Route path="/admin-dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
-          <Route path="/admin-products" element={<AdminRoute><AdminProducts /></AdminRoute>} />
-          <Route path="/admin-orders" element={<AdminRoute><AdminOrders /></AdminRoute>} />
-          <Route path="/admin-users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
-          <Route path="/admin-licenses" element={<AdminRoute><AdminLicenses /></AdminRoute>} />
-          <Route path="/admin-downloads" element={<AdminRoute><AdminDownloads /></AdminRoute>} />
-          <Route path="/admin-coupons" element={<AdminRoute><AdminCoupons /></AdminRoute>} />
-          <Route path="/admin-custom-requests" element={<AdminRoute><AdminCustomRequests /></AdminRoute>} />
-          <Route path="/admin-support" element={<AdminRoute><AdminSupport /></AdminRoute>} />
-          <Route path="/admin-reviews" element={<AdminRoute><AdminReviews /></AdminRoute>} />
-          <Route path="/admin-logs" element={<AdminRoute><AdminLogs /></AdminRoute>} />
-          <Route path="/admin-settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />
+          <Route path="/admin/dashboard" element={withAdminLayout(<AdminDashboard />)} />
+          <Route path="/admin/products" element={withAdminLayout(<AdminProducts />)} />
+          <Route path="/admin/orders" element={withAdminLayout(<AdminOrders />)} />
+          <Route path="/admin/customers" element={withAdminLayout(<AdminUsers />)} />
+          <Route path="/admin/users" element={withAdminLayout(<AdminUsers />)} />
+          <Route path="/admin/licenses" element={withAdminLayout(<AdminLicenses />)} />
+          <Route path="/admin/downloads" element={withAdminLayout(<AdminDownloads />)} />
+          <Route path="/admin/coupons" element={withAdminLayout(<AdminCoupons />)} />
+          <Route path="/admin/custom-requests" element={withAdminLayout(<AdminCustomRequests />)} />
+          <Route path="/admin/support" element={withAdminLayout(<AdminSupport />)} />
+          <Route path="/admin/reviews" element={withAdminLayout(<AdminReviews />)} />
+          <Route path="/admin/logs" element={withAdminLayout(<AdminLogs />)} />
+          <Route path="/admin/settings" element={withAdminLayout(<AdminSettings />)} />
+          <Route path="/admin-dashboard" element={<AdminRoute><Navigate to="/admin/dashboard" replace /></AdminRoute>} />
+          <Route path="/admin-products" element={<AdminRoute><Navigate to="/admin/products" replace /></AdminRoute>} />
+          <Route path="/admin-orders" element={<AdminRoute><Navigate to="/admin/orders" replace /></AdminRoute>} />
+          <Route path="/admin-users" element={<AdminRoute><Navigate to="/admin/customers" replace /></AdminRoute>} />
+          <Route path="/admin-licenses" element={<AdminRoute><Navigate to="/admin/licenses" replace /></AdminRoute>} />
+          <Route path="/admin-downloads" element={<AdminRoute><Navigate to="/admin/downloads" replace /></AdminRoute>} />
+          <Route path="/admin-coupons" element={<AdminRoute><Navigate to="/admin/coupons" replace /></AdminRoute>} />
+          <Route path="/admin-custom-requests" element={<AdminRoute><Navigate to="/admin/custom-requests" replace /></AdminRoute>} />
+          <Route path="/admin-support" element={<AdminRoute><Navigate to="/admin/support" replace /></AdminRoute>} />
+          <Route path="/admin-reviews" element={<AdminRoute><Navigate to="/admin/reviews" replace /></AdminRoute>} />
+          <Route path="/admin-logs" element={<AdminRoute><Navigate to="/admin/logs" replace /></AdminRoute>} />
+          <Route path="/admin-settings" element={<AdminRoute><Navigate to="/admin/settings" replace /></AdminRoute>} />
 
           {/* ─── Legacy Admin Routes (preserved) ─── */}
           <Route path="/orders" element={<AdminRoute><OrdersPage /></AdminRoute>} />
