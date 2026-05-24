@@ -1,4 +1,4 @@
-import { supabase } from "./supabase";
+import { isSupabaseConfigured, supabase } from "./supabase";
 
 /**
  * Product Service
@@ -112,6 +112,16 @@ export async function getProducts({
   limit = null,
   orderBy = "featured",
 } = {}) {
+  if (!isSupabaseConfigured) {
+    let products = FALLBACK_PRODUCTS.filter((p) => p.is_active);
+    if (category) products = products.filter((p) => p.category === category);
+    if (productType) products = products.filter((p) => p.product_type === productType);
+    if (featured !== null) products = products.filter((p) => p.featured === featured);
+    if (search) products = products.filter((p) => p.title.toLowerCase().includes(search.toLowerCase()));
+    if (limit) products = products.slice(0, limit);
+    return { data: products, error: null };
+  }
+
   try {
     let query = supabase
       .from("products")
@@ -163,6 +173,11 @@ export async function getProductById(id) {
   const numId = Number(id);
   if (isNaN(numId)) return { data: null, error: "Invalid product ID" };
 
+  if (!isSupabaseConfigured) {
+    const fallback = FALLBACK_PRODUCTS.find((p) => p.id === numId);
+    return { data: fallback || null, error: fallback ? null : "Product not found" };
+  }
+
   try {
     const { data, error } = await supabase
       .from("products")
@@ -183,6 +198,11 @@ export async function getProductById(id) {
  * Get a product by slug
  */
 export async function getProductBySlug(slug) {
+  if (!isSupabaseConfigured) {
+    const fallback = FALLBACK_PRODUCTS.find((p) => p.slug === slug);
+    return { data: fallback || null, error: fallback ? null : "Product not found" };
+  }
+
   try {
     const { data, error } = await supabase
       .from("products")
@@ -203,6 +223,10 @@ export async function getProductBySlug(slug) {
  * Get related products (same category, different ID)
  */
 export async function getRelatedProducts(productId, category, limit = 4) {
+  if (!isSupabaseConfigured) {
+    return { data: FALLBACK_PRODUCTS.filter((p) => p.id !== productId && (!category || p.category === category)).slice(0, limit), error: null };
+  }
+
   try {
     const { data, error } = await supabase
       .from("products")

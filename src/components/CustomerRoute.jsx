@@ -6,7 +6,7 @@ import { getCurrentUser } from "../lib/auth";
  * CustomerRoute - Protects routes that require authentication.
  * Redirects unauthenticated users to /login.
  */
-function CustomerRoute({ children }) {
+function CustomerRoute({ children, fallback = null }) {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
 
@@ -26,6 +26,7 @@ function CustomerRoute({ children }) {
   }
 
   if (!user) {
+    if (fallback) return fallback;
     return <Navigate to="/login" replace />;
   }
 

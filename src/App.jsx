@@ -15,10 +15,12 @@ import Hero from "./components/Hero";
 import About from "./components/About";
 import Products from "./components/Products";
 import { AnimatedSection, StaggerContainer, StaggerItem } from "./components/animations";
+import { useAppContext } from "./context/AppContext";
 
 // ── Lazy-load pages for better performance
 const ProductDetails = lazy(() => import("./pages/ProductDetails"));
 const Checkout = lazy(() => import("./pages/Checkout"));
+const CheckoutAccess = lazy(() => import("./pages/CheckoutAccess"));
 const ProductsPage = lazy(() => import("./pages/ProductsPage"));
 const AboutPage = lazy(() => import("./pages/AboutPage"));
 const ContactPage = lazy(() => import("./pages/ContactPage"));
@@ -72,6 +74,7 @@ function withAdminLayout(page) {
 }
 
 function HomePage() {
+  const { tx, t } = useAppContext();
   return (
     <>
       <Hero />
@@ -82,18 +85,18 @@ function HomePage() {
           <div className="container conversion-grid">
             <StaggerContainer>
               <StaggerItem>
-              <span className="section-kicker">Custom Excel systems</span>
+              <span className="section-kicker">{tx("Custom Excel systems", "أنظمة Excel مخصصة")}</span>
               </StaggerItem>
               <StaggerItem>
-              <h2>Need a workflow built around your exact business?</h2>
+              <h2>{tx("Need a workflow built around your exact business?", "هل تحتاج إلى سير عمل مبني حول طبيعة عملك بدقة؟")}</h2>
               </StaggerItem>
               <StaggerItem>
-              <p>Send your requirements and receive a structured quote for dashboards, trackers, CRM sheets, inventory systems, or finance models.</p>
+              <p>{tx("Send your requirements and receive a structured quote for dashboards, trackers, CRM sheets, inventory systems, or finance models.", "أرسل متطلباتك واحصل على عرض منظم للوحات المتابعة أو أدوات التتبع أو CRM أو المخزون أو النماذج المالية.")}</p>
               </StaggerItem>
             </StaggerContainer>
             <div className="conversion-actions">
-              <a className="primary-link-btn" href="/custom-request">Request a custom system</a>
-              <a className="secondary-link-btn" href="/free-templates">Explore free templates</a>
+              <a className="primary-link-btn" href="/custom-request">{t.requestCustomWork}</a>
+              <a className="secondary-link-btn" href="/free-templates">{tx("Explore free templates", "استكشف القوالب المجانية")}</a>
             </div>
           </div>
         </AnimatedSection>
@@ -133,8 +136,8 @@ function AnimatedRoutes() {
           <Route path="/reset-password" element={<ResetPassword />} />
 
           {/* ─── Customer Routes ─── */}
-          <Route path="/checkout" element={<CustomerRoute><ProductsPage /></CustomerRoute>} />
-          <Route path="/checkout/:id" element={<CustomerRoute><Checkout /></CustomerRoute>} />
+          <Route path="/checkout" element={<CheckoutAccess />} />
+          <Route path="/checkout/:id" element={<CustomerRoute fallback={<CheckoutAccess />}><Checkout /></CustomerRoute>} />
           <Route path="/order-success" element={<OrderSuccess />} />
           <Route path="/my-orders" element={<CustomerRoute><MyOrders /></CustomerRoute>} />
 

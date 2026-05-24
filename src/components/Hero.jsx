@@ -10,33 +10,33 @@ function Hero() {
       <div className="container hero-grid">
         <StaggerContainer className="hero-copy">
           <StaggerItem>
-          <span className="hero-kicker">{tx("Premium Excel marketplace", "منصة احترافية لحلول Excel")}</span>
+            <span className="hero-kicker">{tx("Premium Excel marketplace", "منصة احترافية لحلول Excel")}</span>
           </StaggerItem>
           <StaggerItem>
-          <h1>{t.heroTitle}</h1>
+            <h1>{t.heroTitle}</h1>
           </StaggerItem>
           <StaggerItem>
-          <p className="subtitle">{t.heroSubtitle}</p>
+            <p className="subtitle">{t.heroSubtitle}</p>
           </StaggerItem>
           <StaggerItem>
-          <p className="description">{t.heroDescription}</p>
+            <p className="description">{t.heroDescription}</p>
           </StaggerItem>
           <StaggerItem>
-          <div className="hero-search" role="search">
-            <input aria-label="Find Excel products" placeholder={tx("Search dashboards, inventory, CRM, finance...", "ابحث عن لوحات متابعة، مخزون، مبيعات، مالية...")} />
-            <Link to="/products" className="primary-link-btn">{t.browseProducts}</Link>
-          </div>
+            <div className="hero-search" role="search">
+              <input aria-label={t.searchProducts} placeholder={t.searchProducts} />
+              <Link to="/products" className="primary-link-btn">{t.browseProducts}</Link>
+            </div>
           </StaggerItem>
           <StaggerItem>
-          <div className="hero-buttons">
-            <Link to="/products" className="hero-link-btn">{t.browseProducts}</Link>
-            <Link to="/custom-request" className="hero-link-btn secondary">{t.requestCustomWork}</Link>
-          </div>
+            <div className="hero-buttons">
+              <Link to="/products" className="hero-link-btn">{t.browseProducts}</Link>
+              <Link to="/custom-request" className="hero-link-btn secondary">{t.requestCustomWork}</Link>
+            </div>
           </StaggerItem>
           <StaggerContainer className="trust-strip" aria-label="Marketplace trust signals">
-            <StaggerItem as="span">{tx("Secure delivery", "تسليم آمن")}</StaggerItem>
-            <StaggerItem as="span">{tx("License management", "إدارة التراخيص")}</StaggerItem>
-            <StaggerItem as="span">{tx("Admin confirmation", "تأكيد إداري للدفع")}</StaggerItem>
+            <StaggerItem as="span">{t.secureDelivery}</StaggerItem>
+            <StaggerItem as="span">{t.licenseIncluded}</StaggerItem>
+            <StaggerItem as="span">{tx("Manual payment confirmation", "تأكيد دفع يدوي")}</StaggerItem>
           </StaggerContainer>
         </StaggerContainer>
 
@@ -60,7 +60,7 @@ function Hero() {
           </div>
           <div className="hero-panel-list">
             <span>{tx("Inventory tracker", "متابعة المخزون")}</span>
-            <span>{tx("Sales CRM", "إدارة المبيعات")}</span>
+            <span>{tx("Sales CRM", "إدارة المبيعات والعملاء")}</span>
             <span>{tx("Finance planner", "تخطيط مالي")}</span>
           </div>
         </ScaleIn>

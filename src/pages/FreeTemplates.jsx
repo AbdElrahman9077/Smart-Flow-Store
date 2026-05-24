@@ -7,13 +7,13 @@ import { useAppContext } from "../context/AppContext";
 import { LoadingSkeleton } from "../components/ui";
 
 function FreeTemplates() {
-  const { tx } = useAppContext();
+  const { tx, t } = useAppContext();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     getProducts({ productType: "free" }).then(({ data }) => {
-      setProducts(data);
+      setProducts(data || []);
       setLoading(false);
     });
   }, []);
@@ -23,12 +23,20 @@ function FreeTemplates() {
       <section className="page-section">
         <div className="container page-header">
           <span className="section-kicker">{tx("Free resources", "موارد مجانية")}</span>
-          <h1 className="page-title">{tx("Free Excel templates", "قوالب Excel مجانية")}</h1>
+          <h1 className="page-title">{tx("Free Excel templates to start improving your workflow", "قوالب Excel مجانية لتبدأ تحسين سير العمل")}</h1>
           <p className="page-subtitle">
-            {tx("Download selected Excel templates to improve your workflow before upgrading to full business systems.", "حمّل قوالب Excel مختارة لتحسين سير العمل قبل الترقية إلى أنظمة أعمال كاملة.")}
+            {tx(
+              "Download selected Excel templates, test the experience, and upgrade to complete business systems when you need more control.",
+              "حمّل قوالب Excel مختارة، جرّب التجربة، ثم انتقل إلى أنظمة أعمال كاملة عندما تحتاج إلى تحكم أكبر."
+            )}
           </p>
+          <div className="category-proof-row">
+            <span>{tx("Free account may be required to save downloads", "قد تحتاج إلى حساب مجاني لحفظ التحميلات")}</span>
+            <span>{t.secureDelivery}</span>
+            <span>{t.supportAvailable}</span>
+          </div>
           <div className="section-actions">
-            <Link to="/custom-request" className="secondary-link-btn">{tx("Request custom work", "اطلب تنفيذًا مخصصًا")}</Link>
+            <Link to="/custom-request" className="secondary-link-btn">{t.requestCustomWork}</Link>
           </div>
         </div>
       </section>

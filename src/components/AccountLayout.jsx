@@ -1,22 +1,24 @@
 import { NavLink } from "react-router-dom";
 import { StaggerContainer, StaggerItem, SlideIn } from "./animations";
-
-const accountLinks = [
-  { to: "/account", label: "Account Dashboard", end: true },
-  { to: "/account/orders", label: "Orders" },
-  { to: "/account/downloads", label: "Downloads" },
-  { to: "/account/licenses", label: "Licenses" },
-  { to: "/account/custom-requests", label: "Custom Requests" },
-  { to: "/account/support", label: "Support" },
-  { to: "/account/profile", label: "Profile" },
-];
+import { useAppContext } from "../context/AppContext";
 
 function AccountLayout({ children }) {
+  const { t } = useAppContext();
+  const accountLinks = [
+    { to: "/account", label: t.accountDashboard, end: true },
+    { to: "/account/orders", label: t.myOrders },
+    { to: "/account/downloads", label: t.downloads },
+    { to: "/account/licenses", label: t.licenses },
+    { to: "/account/custom-requests", label: t.adminCustomRequests },
+    { to: "/account/support", label: t.support },
+    { to: "/account/profile", label: t.profile },
+  ];
+
   return (
     <div className="workspace-layout account-layout">
       <SlideIn className="workspace-sidebar-shell">
       <aside className="workspace-sidebar" aria-label="Account navigation">
-        <div className="workspace-sidebar-title">Account</div>
+        <div className="workspace-sidebar-title">{t.account}</div>
         <StaggerContainer as="nav" className="workspace-nav">
           {accountLinks.map((link) => (
             <StaggerItem key={link.to}>

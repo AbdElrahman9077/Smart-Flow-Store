@@ -111,3 +111,17 @@ Auth: register, login, OTP, forgot password, reset password.
 Customer: checkout, order success, orders, downloads, licenses, custom requests, support.
 
 Admin: dashboard, products, orders, customers, licenses, downloads, coupons, custom requests, support, reviews, logs, settings.
+
+## Authenticated Portal Testing Notes
+
+Create a normal customer through `/register`, confirm the user in Supabase Auth if email confirmation is enabled, then sign in and smoke test `/account`, `/account/orders`, `/account/downloads`, `/account/licenses`, `/account/custom-requests`, `/account/support`, and `/checkout/:productSlug`.
+
+To test admin screens, promote a real test user in `profiles` after registration:
+
+```sql
+update profiles
+set role = 'admin', is_admin = true
+where email = 'your-test-admin@example.com';
+```
+
+Do not add hardcoded admin credentials to the frontend. Admin UI access is only a convenience layer; Supabase RLS and storage policies must enforce the real security boundary.
