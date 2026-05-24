@@ -91,7 +91,6 @@ function AccountOrders() {
           <div className="orders-grid">{[1,2].map(i => <div key={i} className="order-card skeleton-card" style={{height:120}}><div className="skeleton skeleton-line" /><div className="skeleton skeleton-line short" /></div>)}</div>
         ) : orders.length === 0 ? (
           <div className="products-empty">
-            <div className="empty-icon">📦</div>
             <h3>{tx("No orders yet", "لا توجد طلبات بعد")}</h3>
             <Link to="/products" className="primary-link-btn" style={{ marginTop: 16 }}>{tx("Shop Now", "تسوّق الآن")}</Link>
           </div>
@@ -109,27 +108,27 @@ function AccountOrders() {
                   </span>
                 </div>
                 <div className="order-meta-row">
-                  <span>💰 {order.product_price} {order.currency}</span>
-                  <span>📅 {formatDateTime(order.created_at)}</span>
-                  <span>💳 {order.payment_method || "—"}</span>
+                  <span>{tx("Total", "الإجمالي")}: {order.product_price} {order.currency}</span>
+                  <span>{tx("Created", "تاريخ الإنشاء")}: {formatDateTime(order.created_at)}</span>
+                  <span>{tx("Payment", "الدفع")}: {order.payment_method || "Not set"}</span>
                 </div>
                 {canDownload(order) && (
                   <div style={{ marginTop: 14 }}>
                     <p style={{ fontSize: 13, color: "#6b7280", marginBottom: 10 }}>
-                      {tx("⚠️ One-time download. Use it now.", "⚠️ تحميل لمرة واحدة. استخدمه الآن.")}
+                      {tx("One-time download. Please save the file securely after downloading.", "تحميل لمرة واحدة. يرجى حفظ الملف بأمان بعد التحميل.")}
                     </p>
                     <button
                       className="primary-btn"
                       onClick={() => handleDownload(order)}
                       disabled={downloadingId === order.id}
                     >
-                      {downloadingId === order.id ? tx("Downloading...", "جاري التحميل...") : tx("⬇️ Download", "⬇️ تحميل")}
+                      {downloadingId === order.id ? tx("Downloading...", "جاري التحميل...") : tx("Download", "تحميل")}
                     </button>
                   </div>
                 )}
                 {order.download_used && (
                   <p style={{ marginTop: 12, color: "#64748b", fontSize: 13 }}>
-                    ✅ {tx("Downloaded", "تم التحميل")} — {formatDateTime(order.download_used_at)}
+                    {tx("Downloaded", "تم التحميل")} - {formatDateTime(order.download_used_at)}
                   </p>
                 )}
               </div>

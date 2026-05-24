@@ -4,6 +4,7 @@ import { supabase } from "../../lib/supabase";
 import { getCurrentUser } from "../../lib/auth";
 import PageWrapper from "../../components/PageWrapper";
 import { useAppContext } from "../../context/AppContext";
+import { StatCard } from "../../components/ui";
 
 function AccountPage() {
   const { tx } = useAppContext();
@@ -34,71 +35,48 @@ function AccountPage() {
   }, []);
 
   const menuItems = [
-    { icon: "📦", label: tx("My Orders", "طلباتي"), sub: tx("View all your orders", "عرض كل طلباتك"), to: "/account/orders" },
-    { icon: "⬇️", label: tx("Downloads", "التحميلات"), sub: tx("Download your purchased files", "تحميل ملفاتك"), to: "/account/downloads" },
-    { icon: "🔑", label: tx("Licenses", "التراخيص"), sub: tx("View your license keys", "عرض مفاتيح الترخيص"), to: "/account/licenses" },
-    { icon: "⚙️", label: tx("Custom Requests", "الطلبات المخصصة"), sub: tx("Track your custom orders", "تتبع طلباتك المخصصة"), to: "/account/custom-requests" },
-    { icon: "🎫", label: tx("Support", "الدعم"), sub: tx("Open or view support tickets", "فتح أو عرض تذاكر الدعم"), to: "/account/support" },
+    { label: tx("Orders", "الطلبات"), sub: tx("Review purchase history and status", "راجع سجل الشراء وحالة الطلبات"), to: "/account/orders" },
+    { label: tx("Downloads", "التحميلات"), sub: tx("Access approved product downloads", "الوصول إلى ملفات المنتجات بعد الاعتماد"), to: "/account/downloads" },
+    { label: tx("Licenses", "التراخيص"), sub: tx("Manage product license keys", "إدارة مفاتيح تراخيص المنتجات"), to: "/account/licenses" },
+    { label: tx("Custom Requests", "الطلبات المخصصة"), sub: tx("Track tailored Excel work", "متابعة أعمال Excel المخصصة"), to: "/account/custom-requests" },
+    { label: tx("Support", "الدعم"), sub: tx("Open and manage support tickets", "فتح وإدارة تذاكر الدعم"), to: "/account/support" },
+    { label: tx("Profile", "الملف الشخصي"), sub: tx("Review account details", "مراجعة بيانات الحساب"), to: "/account/profile" },
   ];
 
   return (
     <PageWrapper>
       <div className="container page-section">
-        <div className="account-header">
-          <div className="account-avatar">
-            {user?.email?.[0]?.toUpperCase() || "U"}
-          </div>
-          <div>
-            <h1 className="page-title" style={{ textAlign: "left", marginBottom: 4 }}>
-              {tx("My Account", "حسابي")}
-            </h1>
-            <p className="page-subtitle" style={{ textAlign: "left" }}>
-              {user?.email}
-            </p>
-          </div>
-        </div>
-
-        {/* Stats */}
-        <div className="stats-grid" style={{ marginBottom: 32 }}>
-          <div className="stat-card">
-            <div className="stat-icon">📦</div>
-            <div className="stat-value">{loading ? "—" : stats.orders}</div>
-            <div className="stat-label">{tx("Total Orders", "إجمالي الطلبات")}</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-icon">🔑</div>
-            <div className="stat-value">{loading ? "—" : stats.licenses}</div>
-            <div className="stat-label">{tx("Active Licenses", "التراخيص النشطة")}</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-icon">🎫</div>
-            <div className="stat-value">{loading ? "—" : stats.tickets}</div>
-            <div className="stat-label">{tx("Open Tickets", "التذاكر المفتوحة")}</div>
+        <div className="page-header">
+          <span className="section-kicker">{tx("Customer portal", "بوابة العميل")}</span>
+          <div className="page-header-main">
+            <div>
+              <h1 className="page-title">{tx("Account Dashboard", "لوحة حسابي")}</h1>
+              <p className="page-subtitle">
+                {tx("Manage orders, downloads, licenses, support, and custom Excel requests from one organized workspace.", "أدر الطلبات والتحميلات والتراخيص والدعم وطلبات Excel المخصصة من مساحة واحدة منظمة.")}
+              </p>
+            </div>
+            <Link to="/products" className="primary-link-btn">{tx("Browse products", "تصفح المنتجات")}</Link>
           </div>
         </div>
 
-        {/* Menu */}
-        <div className="account-menu-grid">
+        <div className="details-box" style={{ marginBottom: 22 }}>
+          <h2>{tx("Welcome", "مرحبًا")}</h2>
+          <p className="details-description">{user?.email || tx("Your secure customer account is ready.", "حسابك الآمن جاهز للاستخدام.")}</p>
+        </div>
+
+        <div className="stats-grid" style={{ marginBottom: 24 }}>
+          <StatCard label={tx("Total Orders", "إجمالي الطلبات")} value={loading ? "..." : stats.orders} hint={tx("All submitted purchases", "كل عمليات الشراء")} />
+          <StatCard label={tx("Active Licenses", "التراخيص النشطة")} value={loading ? "..." : stats.licenses} hint={tx("Ready for support and updates", "جاهزة للدعم والتحديثات")} />
+          <StatCard label={tx("Open Tickets", "تذاكر مفتوحة")} value={loading ? "..." : stats.tickets} hint={tx("Current support conversations", "محادثات الدعم الحالية")} />
+        </div>
+
+        <div className="account-menu-grid feature-card-grid">
           {menuItems.map((item) => (
-            <Link key={item.to} to={item.to} className="account-menu-card">
-              <span className="account-menu-icon">{item.icon}</span>
-              <div>
-                <div className="account-menu-label">{item.label}</div>
-                <div className="account-menu-sub">{item.sub}</div>
-              </div>
-              <span className="account-menu-arrow">→</span>
+            <Link key={item.to} to={item.to} className="feature-card account-menu-card">
+              <div className="account-menu-label">{item.label}</div>
+              <div className="account-menu-sub">{item.sub}</div>
             </Link>
           ))}
-        </div>
-
-        {/* CTAs */}
-        <div className="account-cta-row">
-          <Link to="/products" className="primary-link-btn">
-            {tx("Browse Products", "تصفح المنتجات")}
-          </Link>
-          <Link to="/custom-request" className="secondary-link-btn">
-            {tx("Request Custom Excel", "اطلب Excel مخصص")}
-          </Link>
         </div>
       </div>
     </PageWrapper>

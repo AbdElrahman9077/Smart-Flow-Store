@@ -1,8 +1,23 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import { motion as Motion } from "framer-motion";
 import { signOutUser } from "../lib/auth";
 import { useAppContext } from "../context/AppContext";
 import useAdmin from "../hooks/useAdmin";
+
+const adminLinks = [
+  ["/admin/dashboard", "Dashboard"],
+  ["/admin/products", "Products"],
+  ["/admin/orders", "Orders"],
+  ["/admin/customers", "Customers"],
+  ["/admin/licenses", "Licenses"],
+  ["/admin/downloads", "Downloads"],
+  ["/admin/coupons", "Coupons"],
+  ["/admin/custom-requests", "Custom Requests"],
+  ["/admin/support", "Support"],
+  ["/admin/reviews", "Reviews"],
+  ["/admin/logs", "Logs"],
+  ["/admin/settings", "Settings"],
+];
 
 function Navbar() {
   const navigate = useNavigate();
@@ -14,105 +29,68 @@ function Navbar() {
     navigate("/");
   }
 
-  const adminLinks = [
-    ["/admin/dashboard", "Dashboard"],
-    ["/admin/products", "Products"],
-    ["/admin/orders", "Orders"],
-    ["/admin/customers", "Customers"],
-    ["/admin/licenses", "Licenses"],
-    ["/admin/downloads", "Downloads"],
-    ["/admin/coupons", "Coupons"],
-    ["/admin/custom-requests", "Custom Requests"],
-    ["/admin/support", "Support"],
-    ["/admin/reviews", "Reviews"],
-    ["/admin/logs", "Logs"],
-    ["/admin/settings", "Settings"],
+  const publicLinks = [
+    ["/", t.home],
+    ["/products", t.products],
+    ["/bundles", t.bundles],
+    ["/free-templates", t.freeTemplates],
+    ["/custom-request", t.customRequest],
+    ["/faq", t.faq],
+    ["/contact", t.contact],
   ];
 
   return (
-    <Motion.nav
-      className="navbar"
-      initial={{ opacity: 0, y: -18 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
-    >
+    <Motion.nav className="navbar" initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
       <div className="container nav-content">
         <h2 className="logo">
-          <Link to="/">Smart Flow</Link>
+          <Link to="/">Excel Store</Link>
         </h2>
 
         <ul className="nav-links">
-          {!user ? (
-            <>
-              <li><Link to="/">{t.home}</Link></li>
-              <li><Link to="/about">{t.about}</Link></li>
+          {publicLinks.map(([to, label]) => (
+            <li key={to}>
+              <NavLink to={to} className={({ isActive }) => (isActive ? "active" : "")} end={to === "/"}>
+                {label}
+              </NavLink>
+            </li>
+          ))}
 
-              <li>
-                <Link to="/login" className="nav-outline-btn">
-                  {t.login}
-                </Link>
-              </li>
+          {user && (
+            <li className="nav-menu">
+              <Link to="/account" className="nav-outline-btn">{t.account}</Link>
+              <div className="nav-menu-panel">
+                <Link to="/account">Dashboard</Link>
+                <Link to="/account/orders">Orders</Link>
+                <Link to="/account/downloads">Downloads</Link>
+                <Link to="/account/licenses">Licenses</Link>
+                <Link to="/account/custom-requests">Custom Requests</Link>
+                <Link to="/account/support">Support</Link>
+                <Link to="/account/profile">Profile</Link>
+              </div>
+            </li>
+          )}
 
-              <li>
-                <Link to="/register" className="nav-primary-btn">
-                  {t.register}
-                </Link>
-              </li>
-            </>
-          ) : (
-            <>
-              <li><Link to="/">{t.home}</Link></li>
-              <li><Link to="/products">{t.products}</Link></li>
-              <li><Link to="/about">{t.about}</Link></li>
-              <li><Link to="/contact">{t.contact}</Link></li>
-              <li><Link to="/account">Account</Link></li>
-              <li><Link to="/account/orders">{t.myOrders}</Link></li>
-              <li><Link to="/account/downloads">Downloads</Link></li>
-              <li><Link to="/account/licenses">Licenses</Link></li>
-              <li><Link to="/account/support">Support</Link></li>
-              <li>
-                <Link to="/custom-request">
-                  {t.customRequest || "Custom Request"}
-                </Link>
-              </li>
-
-              {!loading && isAdmin && (
-                <li className="nav-menu">
-                  <Link to="/admin/dashboard" className="nav-outline-btn">{t.admin || "Admin"}</Link>
-                  <div className="nav-menu-panel">
-                    {adminLinks.map(([to, label]) => (
-                      <Link key={to} to={to}>{label}</Link>
-                    ))}
-                  </div>
-                </li>
-              )}
-
-              <li>
-                <button className="nav-text-btn" onClick={handleLogout}>
-                  {t.logout}
-                </button>
-              </li>
-            </>
+          {!loading && isAdmin && (
+            <li className="nav-menu">
+              <Link to="/admin/dashboard" className="nav-outline-btn">{t.admin}</Link>
+              <div className="nav-menu-panel">
+                {adminLinks.map(([to, label]) => <Link key={to} to={to}>{label}</Link>)}
+              </div>
+            </li>
           )}
         </ul>
 
         <div className="nav-actions">
-          <button className="small-toggle-btn" onClick={toggleLanguage}>
-            {language === "en" ? "AR" : "EN"}
-          </button>
-
-          <button className="small-toggle-btn" onClick={toggleTheme}>
-            {theme === "light" ? "Dark" : "Light"}
-          </button>
-
-          <a
-            className="whatsapp-btn"
-            href="https://wa.me/201037461971"
-            target="_blank"
-            rel="noreferrer"
-          >
-            WhatsApp
-          </a>
+          {!user ? (
+            <>
+              <Link to="/login" className="nav-outline-btn">{t.login}</Link>
+              <Link to="/register" className="nav-primary-btn">{t.register}</Link>
+            </>
+          ) : (
+            <button className="nav-text-btn" onClick={handleLogout}>{t.logout}</button>
+          )}
+          <button className="small-toggle-btn" onClick={toggleLanguage}>{language === "en" ? "AR" : "EN"}</button>
+          <button className="small-toggle-btn" onClick={toggleTheme}>{theme === "light" ? "Dark" : "Light"}</button>
         </div>
       </div>
     </Motion.nav>

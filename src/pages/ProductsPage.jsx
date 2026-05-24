@@ -8,14 +8,13 @@ function ProductsPage() {
   return (
     <PageWrapper>
       <div className="container page-section">
-        <h1 className="page-title">{tx("Our Products", "منتجاتنا")}</h1>
-        <p className="page-subtitle">
-          {tx(
-            "Browse all available systems, templates, and digital business tools.",
-            "تصفح كل الأنظمة والقوالب والأدوات الرقمية المتاحة."
-          )}
-        </p>
-
+        <div className="page-header">
+          <span className="section-kicker">{tx("Marketplace", "المتجر")}</span>
+          <h1 className="page-title">{tx("Professional Excel products for business operations", "منتجات Excel احترافية لإدارة الأعمال")}</h1>
+          <p className="page-subtitle">
+            {tx("Find ready-made dashboards, trackers, templates, and complete Excel systems with secure delivery and license management.", "اكتشف لوحات متابعة وأدوات تتبع وقوالب وأنظمة Excel كاملة مع تسليم آمن وإدارة للتراخيص.")}
+          </p>
+        </div>
         <Products showHeader={false} />
       </div>
     </PageWrapper>
