@@ -8,6 +8,44 @@ import { getCurrentUser } from "./auth";
  * Manages order creation, retrieval, and status updates.
  */
 
+export const CHECKOUT_COMPATIBLE_PRODUCT_TYPES = ["digital_download", "bundle", "free_product"];
+
+export function isCheckoutCompatibleProduct(product) {
+  return CHECKOUT_COMPATIBLE_PRODUCT_TYPES.includes(product?.product_type || "digital_download");
+}
+
+/**
+ * Create an order through the server-side Edge Function.
+ * The browser only sends product IDs, quantities, and non-pricing manual-payment metadata.
+ */
+export async function createServerOrder({
+  items,
+  customerName,
+  customerEmail,
+  customerPhone,
+  paymentMethod,
+  notes = null,
+  proofFilePath = null,
+  proofFileName = null,
+}) {
+  const { data, error } = await supabase.functions.invoke("create-order", {
+    body: {
+      items,
+      customer: {
+        full_name: customerName,
+        email: customerEmail,
+        phone: customerPhone,
+      },
+      payment_method: paymentMethod,
+      notes,
+      proof_file_path: proofFilePath,
+      proof_file_name: proofFileName,
+    },
+  });
+
+  return { data, error };
+}
+
 /**
  * Create a new order
  */
@@ -121,8 +159,10 @@ export async function adminConfirmOrderPayment(order) {
     .update({
       status: "confirmed",
       payment_status: "confirmed",
+      payment_proof_status: "approved",
       download_enabled: true,
       confirmed_at: now,
+      paid_at: now,
       updated_at: now,
     })
     .eq("id", order.id);

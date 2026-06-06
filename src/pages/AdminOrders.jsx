@@ -54,7 +54,7 @@ function AdminOrders() {
 
     const { data, error } = await supabase
       .from("orders")
-      .select("*")
+      .select("*, order_items (*)")
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -157,16 +157,23 @@ function AdminOrders() {
       payload.download_enabled = true;
       payload.download_used = false;
       payload.download_used_at = null;
+      payload.payment_status = "confirmed";
+      payload.payment_proof_status = "approved";
+      payload.paid_at = now;
     }
 
     if (normalized === "pending") {
       payload.confirmed_at = null;
       payload.download_enabled = false;
+      payload.payment_status = "pending";
+      payload.payment_proof_status = order.proof_file_path || order.payment_proof_path ? "submitted" : "not_submitted";
     }
 
     if (normalized === "rejected") {
       payload.download_enabled = false;
       payload.confirmed_at = null;
+      payload.payment_status = "failed";
+      payload.payment_proof_status = "rejected";
     }
 
     if (normalized === "delivered") {
@@ -259,6 +266,20 @@ function AdminOrders() {
                 <p>
                   <strong>{tx("Price:", "السعر:")}</strong> {order.product_price}{" "}
                   {order.currency}
+                </p>
+                {order.order_items?.length > 0 && (
+                  <div className="order-items-list">
+                    <strong>{tx("Items:", "Items:")}</strong>
+                    {order.order_items.map((item) => (
+                      <p key={item.id || `${order.id}-${item.product_id}`}>
+                        {item.product_name_snapshot || item.product_title || tx("Product", "Product")} x {item.quantity || 1} - {item.line_total ?? item.unit_price} {order.currency}
+                      </p>
+                    ))}
+                  </div>
+                )}
+                <p>
+                  <strong>{tx("Payment status:", "Payment status:")}</strong>{" "}
+                  {order.payment_status || "pending"}
                 </p>
                 <p>
                   <strong>{tx("Customer:", "العميل:")}</strong>{" "}

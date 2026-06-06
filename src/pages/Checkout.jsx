@@ -8,6 +8,7 @@ import { formatPrice } from "../lib/utils";
 import { useToast } from "../context/ToastContext";
 import { useAppContext } from "../context/AppContext";
 import { createAuditLog, sendAdminNotification, sendCustomerEmail } from "../lib/notifications";
+import { createServerOrder, isCheckoutCompatibleProduct } from "../lib/orderService";
 
 function Checkout() {
   const { id } = useParams();
@@ -75,6 +76,18 @@ function Checkout() {
 
   async function handleSubmit(event) {
     event.preventDefault();
+    if (product && !isCheckoutCompatibleProduct(product)) {
+      showToast(
+        tx(
+          "This product type is not available for checkout yet. Please use the request/contact flow.",
+          "This product type is not available for checkout yet. Please use the request/contact flow."
+        ),
+        "error"
+      );
+      navigate(product.product_type === "custom_service" ? "/custom-request" : "/contact");
+      return;
+    }
+
     if (!product) {
       showToast(tx("Product not found.", "المنتج غير موجود."), "error");
       return;
@@ -109,7 +122,6 @@ function Checkout() {
         return;
       }
 
-      let uploadedProofUrl = "";
       let uploadedProofPath = "";
 
       if (proofFile) {
@@ -125,41 +137,26 @@ function Checkout() {
         }
 
         uploadedProofPath = filePath;
-        const { data: publicUrlData } = supabase.storage.from("payment-proofs").getPublicUrl(filePath);
-        uploadedProofUrl = publicUrlData?.publicUrl || "";
       }
 
-      const { data: insertedOrder, error } = await supabase
-        .from("orders")
-        .insert([
-          {
-            user_id: currentUser.id,
-            product_id: product.id,
-            product_title: product.title,
-            product_price: product.price,
-            currency: product.currency,
-            customer_full_name: formData.fullName.trim(),
-            customer_email: formData.email.trim(),
-            customer_phone: formData.phone.trim(),
-            payment_method: formData.paymentMethod.trim(),
-            proof_file_name: proofFile ? proofFile.name : null,
-            proof_file_url: uploadedProofUrl,
-            proof_file_path: uploadedProofPath,
-            notes: formData.notes.trim() || null,
-            status: "pending",
-            download_enabled: false,
-            download_used: false,
-            download_used_at: null,
-          },
-        ])
-        .select()
-        .single();
+      const { data: orderResult, error } = await createServerOrder({
+        items: [{ product_id: product.id, quantity: 1 }],
+        customerName: formData.fullName.trim(),
+        customerEmail: formData.email.trim(),
+        customerPhone: formData.phone.trim(),
+        paymentMethod: formData.paymentMethod.trim(),
+        notes: formData.notes.trim() || null,
+        proofFilePath: uploadedProofPath,
+        proofFileName: proofFile ? proofFile.name : null,
+      });
 
       if (error) {
         showToast(tx(`There was an error saving the order: ${error.message}`, `حدث خطأ أثناء حفظ الطلب: ${error.message}`), "error");
         setSubmitting(false);
         return;
       }
+
+      const insertedOrder = orderResult?.order;
 
       await Promise.allSettled([
         createAuditLog({
@@ -186,7 +183,7 @@ function Checkout() {
       ]);
 
       showToast(tx("Order submitted successfully.", "تم إرسال الطلب بنجاح."));
-      navigate("/order-success");
+      navigate("/order-success", { state: { order: orderResult?.summary || insertedOrder } });
     } catch (error) {
       console.error(error);
       showToast(tx("Something went wrong while submitting your order.", "حدث خطأ أثناء إرسال الطلب."), "error");
@@ -225,6 +222,14 @@ function Checkout() {
             <h2>{product.title}</h2>
             <p>{product.short_description || product.description}</p>
             <h3>{Number(product.price || 0) === 0 ? t.free : formatPrice(product.price, product.currency)}</h3>
+            {!isCheckoutCompatibleProduct(product) && (
+              <p className="details-description">
+                {tx(
+                  "Checkout is not active for this product family yet. Please use request/demo or contact flows.",
+                  "Checkout is not active for this product family yet. Please use request/demo or contact flows."
+                )}
+              </p>
+            )}
           </div>
 
           <div className="payment-info-box">
@@ -268,7 +273,7 @@ function Checkout() {
               <label>{tx("Notes", "ملاحظات")}</label>
               <textarea rows="4" name="notes" value={formData.notes} onChange={handleChange} />
             </div>
-            <button type="submit" className="primary-btn" disabled={submitting}>
+            <button type="submit" className="primary-btn" disabled={submitting || !isCheckoutCompatibleProduct(product)}>
               {submitting ? tx("Submitting...", "جاري الإرسال...") : tx("Submit order", "إرسال الطلب")}
             </button>
           </form>

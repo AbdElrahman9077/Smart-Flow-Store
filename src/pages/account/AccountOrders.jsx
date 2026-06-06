@@ -63,6 +63,15 @@ function AccountOrders() {
                   <span>Payment: {order.payment_method || "Not set"}</span>
                   <span>Payment status: {order.payment_status || "pending"}</span>
                 </div>
+                {order.order_items?.length > 0 && (
+                  <div className="order-meta-row" style={{ marginTop: 8 }}>
+                    {order.order_items.map((item) => (
+                      <span key={item.id || `${order.id}-${item.product_id}`}>
+                        {item.product_name_snapshot || item.product_title || "Product"} x {item.quantity || 1}
+                      </span>
+                    ))}
+                  </div>
+                )}
                 {order.payment_status === "confirmed" ? (
                   <div style={{ marginTop: 14 }}>
                     <Link to="/account/downloads" className="primary-link-btn">Go to secure downloads</Link>

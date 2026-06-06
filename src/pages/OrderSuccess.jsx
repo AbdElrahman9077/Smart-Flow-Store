@@ -1,9 +1,11 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import PageWrapper from "../components/PageWrapper";
 import { useAppContext } from "../context/AppContext";
 
 function OrderSuccess() {
   const { tx, t } = useAppContext();
+  const location = useLocation();
+  const order = location.state?.order;
 
   return (
     <PageWrapper>
@@ -24,6 +26,14 @@ function OrderSuccess() {
               "سنراجع إثبات الدفع الخاص بك ونؤكد الطلب قريبًا."
             )}
           </p>
+
+          {order && (
+            <div className="payment-info-box">
+              <p><strong>{tx("Order number:", "Order number:")}</strong> {order.order_number || `#${order.id}`}</p>
+              <p><strong>{tx("Payment status:", "Payment status:")}</strong> {order.payment_status || "pending"}</p>
+              <p><strong>{tx("Total:", "Total:")}</strong> {order.total ?? "-"} {order.currency || ""}</p>
+            </div>
+          )}
 
           <div className="success-buttons">
             <Link to="/my-orders" className="primary-link-btn">

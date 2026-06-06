@@ -100,7 +100,7 @@ export async function listCustomerOrders() {
 
   const { data, error } = await supabase
     .from("orders")
-    .select("*")
+    .select("*, order_items (*)")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 
