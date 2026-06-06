@@ -47,11 +47,13 @@ function Navbar() {
   const publicLinks = [
     ["/", t.home],
     ["/products", t.products],
-    ["/bundles", t.bundles],
-    ["/free-templates", t.freeTemplates],
+    ["/products", t.excelProducts],
+    ["/web-apps", t.webApps],
+    ["/saas", t.saas],
+    ["/desktop-software", t.desktopSoftware],
     ["/custom-request", t.customRequest],
-    ["/faq", t.faq],
-    ["/contact", t.contact],
+    ["/faq", t.support],
+    ["/docs", t.docs],
   ];
 
   useEffect(() => {
@@ -77,7 +79,7 @@ function Navbar() {
     >
       <div className="container nav-content">
         <h2 className="logo">
-          <Link to="/">Excel Store</Link>
+          <Link to="/">Smart Flow Hub</Link>
         </h2>
 
         <ul className="nav-links desktop-nav-links">
@@ -155,7 +157,7 @@ function Navbar() {
               onClick={(event) => event.stopPropagation()}
             >
               <div className="mobile-drawer-header">
-                <Link to="/" onClick={closeDrawer} className="mobile-drawer-logo">Excel Store</Link>
+                <Link to="/" onClick={closeDrawer} className="mobile-drawer-logo">Smart Flow Hub</Link>
                 <button className="small-toggle-btn" type="button" onClick={closeDrawer}>Close</button>
               </div>
 

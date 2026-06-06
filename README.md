@@ -1,6 +1,17 @@
-# Excel Store / Digital Products Marketplace
+# Smart Flow Hub
 
-Premium React + Vite marketplace for selling Excel systems, templates, bundles, free downloads, and custom Excel services. The app includes public catalog pages, customer account areas, manual-payment checkout, admin CRM screens, Supabase schema/RLS, and edge-function scaffolding for secure digital delivery.
+Smart Flow Hub is the planned central business software hub for Excel systems, digital downloads, custom web app services, SaaS products, desktop software, customer accounts, secure downloads, orders, support, and documentation.
+
+This repository is currently a Smart Flow Hub foundation. The implemented slice is mainly a digital products / Excel store foundation with React/Vite, Supabase Auth integration, Supabase schema, public catalog pages, manual checkout, basic customer/admin portal screens, support-ticket foundations, audit-log foundations, and a `secure-download` Edge Function.
+
+## Current Status
+
+- Smart Flow Hub foundation.
+- Digital products / Excel store foundation partially implemented.
+- Admin/customer portal partially implemented.
+- Supabase schema exists.
+- Secure-download Edge Function exists.
+- Production payments, subscriptions, desktop licensing, device activation, SaaS provisioning, and production email delivery are still pending.
 
 ## Tech Stack
 
@@ -9,15 +20,29 @@ Premium React + Vite marketplace for selling Excel systems, templates, bundles, 
 - Framer Motion
 - Plain CSS design system with light/dark theme hooks
 
-## Features
+## Implemented Foundation
 
 - Public routes for home, products, categories, product details, bundles, free templates, custom requests, FAQ, terms, privacy, contact, and about.
+- Placeholder public routes for Web Apps, SaaS Products, Desktop Software, and Docs / Knowledge Base.
 - Auth routes for login, register, OTP, forgot password, and reset password.
-- Customer portal for orders, downloads, licenses, custom requests, and support tickets.
+- Customer portal foundation for orders, downloads, licenses, custom requests, and support tickets.
 - Manual-payment checkout with payment proof upload and pending confirmation status.
-- Admin dashboard, products, orders, customers, licenses, downloads, coupons, custom requests, support, reviews, logs, and settings.
+- Admin dashboard foundation for products, orders, customers, licenses, downloads, coupons, custom requests, support, reviews, logs, and settings.
 - Supabase migration for profiles, categories, products, orders, order items, licenses, download logs, coupons, reviews, custom requests, support tickets, audit logs, and site settings.
-- Secure-download edge function that verifies ownership, payment status, license status, download limits, then returns a signed Storage URL.
+- `secure-download` Edge Function that verifies ownership, payment status, license status, download limits, then returns a signed Storage URL.
+
+## Not Implemented Yet
+
+- Online payment gateway integration.
+- Payment webhooks.
+- Invoices.
+- Subscriptions or recurring billing.
+- SaaS workspace provisioning.
+- Desktop license activation APIs.
+- Device management.
+- Production-grade email delivery. The `send-email` function is still a placeholder/foundation unless connected to a real provider.
+- Production-grade backend authorization review. Frontend admin routes are a convenience layer; Supabase RLS and storage policies must enforce the real security boundary.
+- Full support messaging and full documentation/blog system.
 
 ## Local Setup
 
@@ -35,7 +60,7 @@ Frontend:
 ```bash
 VITE_SUPABASE_URL=
 VITE_SUPABASE_ANON_KEY=
-VITE_APP_NAME=Excel Store
+VITE_APP_NAME=Smart Flow Hub
 VITE_SITE_URL=
 VITE_ENABLE_MANUAL_PAYMENTS=true
 ```
@@ -75,53 +100,49 @@ where email = 'admin@example.com';
 
 ## Manual Payment Workflow
 
-Customers place an order and upload payment proof. Orders start as pending/manual review. Admins review proof, mark the order confirmed, and the service generates a license and enables controlled downloads.
+Customers place an order and upload payment proof. Orders start as pending/manual review. Admins review proof, mark the order confirmed, and the existing foundation can generate a basic license record and enable controlled downloads.
+
+This is not an online payment gateway. Production payment provider integration and webhooks are pending.
 
 ## Secure Download Workflow
 
-Paid files must live in the private `product-files` bucket. The frontend calls the `secure-download` edge function. The function checks the authenticated user, order ownership, confirmed payment, active license, and download limit before creating a short-lived signed URL and logging the download.
+Paid files must live in the private `product-files` bucket. The frontend calls the `secure-download` Edge Function. The function checks the authenticated user, order ownership, confirmed payment, active license, and download limit before creating a short-lived signed URL and logging the download.
+
+Legacy download paths and storage policy coverage still need review in later patches.
 
 ## Important Security Notes
 
 - Never expose `SUPABASE_SERVICE_ROLE_KEY` in frontend code.
-- Enable RLS before production use.
+- Enable and verify RLS before production use.
 - Treat frontend admin routes as UX only; real protection must come from Supabase policies.
 - Keep paid product files in private buckets and use signed URLs.
 - Keep `.env` out of Git.
 - Review RLS policies after any schema customization.
 
-## Deployment Checklist
+## Roadmap Notes
 
-- `npm run lint`
-- `npm run build`
-- Run SQL migration in production Supabase.
-- Verify RLS policies are enabled.
-- Deploy edge functions and set function secrets.
-- Configure private/public storage buckets.
-- Create first admin profile.
-- Confirm manual payment instructions in Admin Settings.
-- Smoke test public, auth, customer, and admin routes.
+- Patch 02: Smart Flow Hub Information Architecture and Rebrand.
+- Patch 03: Product Types and Catalog Foundation.
+- Patch 04: Customer Ownership and Account Hardening.
+- Patch 05: Admin RBAC Foundation.
 
-## Production Smoke Test
+## Baseline Verification
 
-Public: home, products, product details, search/filter, bundles, free templates, custom request.
+Run these commands before and after each patch:
+
+```bash
+npm run lint
+npm run build
+```
+
+Known baseline lint warnings may include React Hook dependency warnings in existing data-loading screens. Fix them only when the behavior can be preserved safely.
+
+## Smoke Test Areas
+
+Public: home, products, product details, search/filter, bundles, free templates, custom request, Web Apps placeholder, SaaS placeholder, Desktop Software placeholder, Docs placeholder.
 
 Auth: register, login, OTP, forgot password, reset password.
 
 Customer: checkout, order success, orders, downloads, licenses, custom requests, support.
 
 Admin: dashboard, products, orders, customers, licenses, downloads, coupons, custom requests, support, reviews, logs, settings.
-
-## Authenticated Portal Testing Notes
-
-Create a normal customer through `/register`, confirm the user in Supabase Auth if email confirmation is enabled, then sign in and smoke test `/account`, `/account/orders`, `/account/downloads`, `/account/licenses`, `/account/custom-requests`, `/account/support`, and `/checkout/:productSlug`.
-
-To test admin screens, promote a real test user in `profiles` after registration:
-
-```sql
-update profiles
-set role = 'admin', is_admin = true
-where email = 'your-test-admin@example.com';
-```
-
-Do not add hardcoded admin credentials to the frontend. Admin UI access is only a convenience layer; Supabase RLS and storage policies must enforce the real security boundary.

@@ -37,6 +37,7 @@ const BundlesPage = lazy(() => import("./pages/BundlesPage"));
 const FaqPage = lazy(() => import("./pages/FaqPage"));
 const TermsPage = lazy(() => import("./pages/TermsPage"));
 const PrivacyPage = lazy(() => import("./pages/PrivacyPage"));
+const PlaceholderSectionPage = lazy(() => import("./pages/PlaceholderSectionPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Unauthorized = lazy(() => import("./pages/Unauthorized"));
 
@@ -75,10 +76,67 @@ function withAdminLayout(page) {
 
 function HomePage() {
   const { tx, t } = useAppContext();
+  const productFamilies = [
+    {
+      title: tx("Excel Products", "منتجات Excel"),
+      text: tx("Ready templates, VBA systems, dashboards, accounting, HR, inventory, and reporting tools are available through the current catalog foundation.", "القوالب الجاهزة وأنظمة VBA ولوحات المتابعة وأدوات الحسابات والموارد البشرية والمخزون والتقارير متاحة من خلال أساس الكتالوج الحالي."),
+      cta: tx("Browse products", "تصفح المنتجات"),
+      to: "/products",
+      status: tx("Available now", "متاح الآن"),
+    },
+    {
+      title: tx("Web App Services", "خدمات تطبيقات الويب"),
+      text: tx("Custom business systems, admin dashboards, and portals can be requested and scoped manually.", "يمكن طلب أنظمة الأعمال المخصصة ولوحات الإدارة والبوابات وتحديد نطاقها يدويًا."),
+      cta: tx("Request a custom project", "اطلب مشروعًا مخصصًا"),
+      to: "/custom-request",
+      status: tx("Available by request", "متاح حسب الطلب"),
+    },
+    {
+      title: tx("SaaS Products", "منتجات SaaS"),
+      text: tx("Subscription-based products are planned, but recurring billing and workspace provisioning are not implemented yet.", "منتجات الاشتراك مخططة، لكن الفوترة المتكررة وتجهيز مساحات العمل غير مطبقة بعد."),
+      cta: tx("Request demo", "اطلب عرضًا"),
+      to: "/saas",
+      status: tx("Coming soon", "قريبًا"),
+    },
+    {
+      title: tx("Desktop Software", "برامج سطح المكتب"),
+      text: tx("Offline-first systems and desktop license activation are planned as dedicated production modules.", "الأنظمة التي تعمل دون اتصال وتفعيل تراخيص سطح المكتب مخططة كوحدات إنتاجية مستقلة."),
+      cta: tx("Request demo", "اطلب عرضًا"),
+      to: "/desktop-software",
+      status: tx("Coming soon", "قريبًا"),
+    },
+  ];
+
   return (
     <>
       <Hero />
       <main>
+        <AnimatedSection className="products-section">
+          <div className="container">
+            <div className="section-title-row">
+              <span className="section-kicker">{tx("Product families", "عائلات المنتجات")}</span>
+              <h2>{tx("Smart Flow Hub sections", "أقسام Smart Flow Hub")}</h2>
+              <p className="section-subtitle">
+                {tx(
+                  "Current available products focus on digital downloads and Excel business tools. Future SaaS, desktop licensing, and subscription modules are labeled clearly until implemented.",
+                  "تركز المنتجات المتاحة حاليًا على التحميلات الرقمية وأدوات Excel للأعمال. يتم توضيح وحدات SaaS وتراخيص سطح المكتب والاشتراكات المستقبلية حتى يتم تنفيذها."
+                )}
+              </p>
+            </div>
+            <div className="feature-card-grid">
+              {productFamilies.map((family) => (
+                <article className="feature-card" key={family.title}>
+                  <span className="status-badge">{family.status}</span>
+                  <h3>{family.title}</h3>
+                  <p>{family.text}</p>
+                  <div className="section-actions">
+                    <a className="card-link-btn" href={family.to}>{family.cta}</a>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+        </AnimatedSection>
         <About />
         <Products featuredOnly limit={6} />
         <AnimatedSection className="conversion-section">
@@ -123,6 +181,10 @@ function AnimatedRoutes() {
           <Route path="/about" element={<AboutPage />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/custom-request" element={<CustomRequest />} />
+          <Route path="/web-apps" element={<PlaceholderSectionPage section="web-apps" />} />
+          <Route path="/saas" element={<PlaceholderSectionPage section="saas" />} />
+          <Route path="/desktop-software" element={<PlaceholderSectionPage section="desktop-software" />} />
+          <Route path="/docs" element={<PlaceholderSectionPage section="docs" />} />
           <Route path="/faq" element={<FaqPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />

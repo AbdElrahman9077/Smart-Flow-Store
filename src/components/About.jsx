@@ -7,16 +7,16 @@ function About() {
 
   const values = [
     {
-      title: tx("Built for business workflows", "مصممة لسير العمل التجاري"),
-      text: tx("Every template focuses on practical reporting, operations, and decision-making needs.", "كل قالب يركز على التقارير والعمليات واتخاذ القرار بشكل عملي."),
+      title: tx("Excel Products", "منتجات Excel"),
+      text: tx("Ready templates, VBA systems, dashboards, accounting, HR, inventory, and reporting tools are the current strongest product slice.", "القوالب الجاهزة وأنظمة VBA ولوحات المتابعة وأدوات الحسابات والموارد البشرية والمخزون والتقارير هي الشريحة الأقوى حاليًا."),
     },
     {
-      title: tx("Controlled digital delivery", "تسليم رقمي منظم"),
-      text: tx("Orders, payment confirmation, downloads, and license keys are managed from one portal.", "تتم إدارة الطلبات وتأكيد الدفع والتحميلات ومفاتيح الترخيص من بوابة واحدة."),
+      title: tx("Web App Services", "خدمات تطبيقات الويب"),
+      text: tx("Custom business systems, admin dashboards, and customer portals are available by request and scoped manually.", "أنظمة الأعمال المخصصة ولوحات الإدارة وبوابات العملاء متاحة حسب الطلب ويتم تحديد نطاقها يدويًا."),
     },
     {
-      title: tx("Ready-made and custom", "جاهز ومخصص"),
-      text: tx("Start with a ready-made system or request a tailored Excel solution for your exact process.", "ابدأ بنظام جاهز أو اطلب حل Excel مخصصًا لعملياتك بدقة."),
+      title: tx("SaaS and Desktop Roadmap", "خارطة SaaS وسطح المكتب"),
+      text: tx("Subscription products, desktop license activation, and device management are planned production modules, not current automated features.", "منتجات الاشتراك وتفعيل تراخيص سطح المكتب وإدارة الأجهزة وحدات إنتاجية مخططة وليست ميزات مؤتمتة حاليًا."),
     },
   ];
 
@@ -24,17 +24,17 @@ function About() {
     <AnimatedSection className="about-section">
       <div className="container split-section">
         <div>
-          <span className="section-kicker">{tx("Why Excel Store", "لماذا Excel Store")}</span>
-          <h2>{tx("A professional marketplace for serious Excel products.", "منصة احترافية لمنتجات Excel الجادة.")}</h2>
+          <span className="section-kicker">{tx("Current platform shape", "شكل المنصة الحالي")}</span>
+          <h2>{tx("A Smart Flow Hub foundation with Excel products available now.", "أساس Smart Flow Hub مع منتجات Excel متاحة الآن.")}</h2>
           <p>
             {tx(
-              "Excel Store brings product-grade structure to spreadsheets: clean catalog pages, secure delivery, customer accounts, licensing, support, and admin workflows.",
-              "يوفر Excel Store تجربة منظمة لملفات Excel: صفحات منتجات واضحة، تسليم آمن، حسابات عملاء، تراخيص، دعم، وإدارة داخلية."
+              "Smart Flow Hub is being organized as the central business software hub. Today it provides a digital products and Excel store foundation with manual payments, partial customer/admin portals, support tickets, and secure-download infrastructure.",
+              "يتم تنظيم Smart Flow Hub كمركز برمجيات الأعمال. حاليًا يوفر أساس متجر منتجات رقمية ومنتجات Excel مع دفع يدوي وبوابات عملاء وإدارة جزئية وتذاكر دعم وبنية تحميل آمن."
             )}
           </p>
           <div className="section-actions">
-            <Link to="/products" className="primary-link-btn">{tx("Browse marketplace", "تصفح المنتجات")}</Link>
-            <Link to="/about" className="secondary-link-btn">{tx("Learn more", "اعرف المزيد")}</Link>
+            <Link to="/products" className="primary-link-btn">{tx("Browse products", "تصفح المنتجات")}</Link>
+            <Link to="/custom-request" className="secondary-link-btn">{tx("Request a custom project", "اطلب مشروعًا مخصصًا")}</Link>
           </div>
         </div>
         <StaggerContainer className="feature-card-grid">

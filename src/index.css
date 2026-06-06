@@ -1414,6 +1414,20 @@ body.nav-drawer-open {
   gap: 10px;
 }
 
+.footer-link-group {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+}
+
+.footer-link-group strong {
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 950;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
 .footer-links a,
 .footer-trust span {
   padding: 8px 10px;
