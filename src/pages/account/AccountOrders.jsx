@@ -60,8 +60,9 @@ function AccountOrders() {
                 <div className="order-meta-row">
                   <span>Total: {order.total || order.product_price} {order.currency}</span>
                   <span>Created: {formatDateTime(order.created_at)}</span>
-                  <span>Payment: {order.payment_method || "Not set"}</span>
+                  <span>Payment: {order.manual_payment_method || order.payment_method || "Not set"}</span>
                   <span>Payment status: {order.payment_status || "pending"}</span>
+                  <span>Proof status: {order.payment_proof_status || "not_required"}</span>
                 </div>
                 {order.order_items?.length > 0 && (
                   <div className="order-meta-row" style={{ marginTop: 8 }}>
@@ -76,8 +77,12 @@ function AccountOrders() {
                   <div style={{ marginTop: 14 }}>
                     <Link to="/account/downloads" className="primary-link-btn">Go to secure downloads</Link>
                   </div>
+                ) : order.payment_status === "rejected" || order.payment_status === "failed" ? (
+                  <p className="details-description" style={{ marginTop: 12 }}>
+                    Payment proof was rejected{order.payment_rejection_reason ? `: ${order.payment_rejection_reason}` : "."} Please contact support or submit a new order if needed.
+                  </p>
                 ) : (
-                  <p className="details-description" style={{ marginTop: 12 }}>Downloads unlock after manual admin confirmation. Online payment automation is not implemented yet.</p>
+                  <p className="details-description" style={{ marginTop: 12 }}>Your manual payment proof is pending review. Downloads unlock only after admin confirmation. Online payment automation is not implemented yet.</p>
                 )}
               </div>
             ))}

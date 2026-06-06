@@ -8,7 +8,8 @@ import {
   sendCustomerEmail,
   createAuditLog,
 } from "../lib/notifications";
-import { adminConfirmOrderPayment } from "../lib/orderService";
+import { reviewManualPayment } from "../lib/orderService";
+import useAdminPermissions from "../hooks/useAdminPermissions";
 
 function AdminOrders() {
   const [orders, setOrders] = useState([]);
@@ -17,6 +18,8 @@ function AdminOrders() {
 
   const { showToast } = useToast();
   const { tx } = useAppContext();
+  const { hasAnyPermission } = useAdminPermissions();
+  const canReviewPayments = hasAnyPermission(["orders.manage", "payments.manage"]);
 
   function normalizeStatus(status) {
     const value = String(status || "").toLowerCase().trim();
@@ -75,20 +78,16 @@ function AdminOrders() {
 
   async function handleOpenProof(order) {
     try {
-      if (order.proof_file_path) {
+      const proofPath = order.payment_proof_path || order.proof_file_path;
+      if (proofPath) {
         const { data, error } = await supabase.storage
           .from("payment-proofs")
-          .createSignedUrl(order.proof_file_path, 300);
+          .createSignedUrl(proofPath, 300);
 
         if (!error && data?.signedUrl) {
           window.open(data.signedUrl, "_blank");
           return;
         }
-      }
-
-      if (order.proof_file_url) {
-        window.open(order.proof_file_url, "_blank");
-        return;
       }
 
       showToast(
@@ -147,6 +146,70 @@ function AdminOrders() {
 
     setUpdatingOrderId(order.id);
 
+    if (normalized === "confirmed" || normalized === "rejected") {
+      if (!canReviewPayments) {
+        showToast(tx("You do not have permission to review manual payments.", "You do not have permission to review manual payments."), "error");
+        setUpdatingOrderId(null);
+        return;
+      }
+
+      const adminNotes = window.prompt(tx("Optional admin notes", "Optional admin notes"), "") || "";
+      let rejectionReason = "";
+      if (normalized === "rejected") {
+        rejectionReason = window.prompt(tx("Rejection reason is required", "Rejection reason is required"), "") || "";
+        if (!rejectionReason.trim()) {
+          showToast(tx("Rejection reason is required.", "Rejection reason is required."), "error");
+          setUpdatingOrderId(null);
+          return;
+        }
+      }
+
+      const { error } = await reviewManualPayment({
+        orderId: order.id,
+        action: normalized === "confirmed" ? "approve" : "reject",
+        adminNotes,
+        rejectionReason,
+      });
+
+      setUpdatingOrderId(null);
+
+      if (error) {
+        console.error("Manual payment review error:", error);
+        showToast(
+          tx(`Failed to review payment: ${error.message}`, `Failed to review payment: ${error.message}`),
+          "error"
+        );
+        return;
+      }
+
+      await Promise.allSettled([
+        sendAdminNotification({
+          subject: `Smart Flow - Manual payment ${normalized === "confirmed" ? "approved" : "rejected"}`,
+          html: `
+            <div>
+              <h2>Manual Payment Reviewed</h2>
+              <p>Order ID: ${order.id}</p>
+              <p>Product: ${order.product_title || "-"}</p>
+              <p>Customer: ${order.customer_full_name || "-"}</p>
+              <p>Decision: ${normalized}</p>
+            </div>
+          `,
+        }),
+
+        order.customer_email
+          ? sendCustomerEmail({
+              to: order.customer_email,
+              subject: "Smart Flow - Manual Payment Reviewed",
+              html: getCustomerEmailMessage(normalized, order.product_title),
+            })
+          : Promise.resolve(),
+      ]);
+
+      showToast(tx("Manual payment review saved.", "Manual payment review saved."));
+      fetchOrders();
+      return;
+    }
+
     const payload = {
       status: normalized,
       updated_at: now,
@@ -166,7 +229,7 @@ function AdminOrders() {
       payload.confirmed_at = null;
       payload.download_enabled = false;
       payload.payment_status = "pending";
-      payload.payment_proof_status = order.proof_file_path || order.payment_proof_path ? "submitted" : "not_submitted";
+      payload.payment_proof_status = order.proof_file_path || order.payment_proof_path ? "pending_review" : "not_required";
     }
 
     if (normalized === "rejected") {
@@ -182,9 +245,7 @@ function AdminOrders() {
       payload.download_used_at = order.download_used_at || now;
     }
 
-    const { error } = normalized === "confirmed"
-      ? await adminConfirmOrderPayment(order)
-      : await supabase.from("orders").update(payload).eq("id", order.id);
+    const { error } = await supabase.from("orders").update(payload).eq("id", order.id);
 
     setUpdatingOrderId(null);
 
@@ -282,6 +343,20 @@ function AdminOrders() {
                   {order.payment_status || "pending"}
                 </p>
                 <p>
+                  <strong>{tx("Proof status:", "Proof status:")}</strong>{" "}
+                  {order.payment_proof_status || "not_required"}
+                </p>
+                <p>
+                  <strong>{tx("Manual payment method:", "Manual payment method:")}</strong>{" "}
+                  {order.manual_payment_method || order.payment_method || tx("Not specified", "Not specified")}
+                </p>
+                {order.manual_payment_reference && (
+                  <p>
+                    <strong>{tx("Payment reference:", "Payment reference:")}</strong>{" "}
+                    {order.manual_payment_reference}
+                  </p>
+                )}
+                <p>
                   <strong>{tx("Customer:", "العميل:")}</strong>{" "}
                   {order.customer_full_name || tx("No name", "بدون اسم")}
                 </p>
@@ -321,6 +396,34 @@ function AdminOrders() {
                   </p>
                 )}
 
+                {order.payment_reviewed_at && (
+                  <p>
+                    <strong>{tx("Payment reviewed at:", "Payment reviewed at:")}</strong>{" "}
+                    {formatDate(order.payment_reviewed_at)}
+                  </p>
+                )}
+
+                {order.payment_reviewed_by && (
+                  <p>
+                    <strong>{tx("Payment reviewed by:", "Payment reviewed by:")}</strong>{" "}
+                    {order.payment_reviewed_by}
+                  </p>
+                )}
+
+                {order.payment_rejection_reason && (
+                  <p>
+                    <strong>{tx("Rejection reason:", "Rejection reason:")}</strong>{" "}
+                    {order.payment_rejection_reason}
+                  </p>
+                )}
+
+                {order.payment_admin_notes && (
+                  <p>
+                    <strong>{tx("Payment admin notes:", "Payment admin notes:")}</strong>{" "}
+                    {order.payment_admin_notes}
+                  </p>
+                )}
+
                 {order.download_used_at && (
                   <p>
                     <strong>{tx("Download Used At:", "تاريخ استخدام التحميل:")}</strong>{" "}
@@ -328,7 +431,7 @@ function AdminOrders() {
                   </p>
                 )}
 
-                {(order.proof_file_path || order.proof_file_url) && (
+                {(order.payment_proof_path || order.proof_file_path) && (
                   <div className="proof-preview">
                     <p>
                       <strong>{tx("Payment Proof:", "إثبات الدفع:")}</strong>
@@ -351,6 +454,8 @@ function AdminOrders() {
                     {tx("Pending", "قيد المراجعة")}
                   </button>
 
+                  {canReviewPayments && (
+                    <>
                   <button
                     onClick={() => handleStatusChange(order, "confirmed")}
                     disabled={updatingOrderId === order.id}
@@ -366,6 +471,9 @@ function AdminOrders() {
                   >
                     {tx("Reject", "رفض")}
                   </button>
+
+                    </>
+                  )}
 
                   <button
                     onClick={() => handleStatusChange(order, "delivered")}

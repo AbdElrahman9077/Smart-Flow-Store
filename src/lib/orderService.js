@@ -46,6 +46,24 @@ export async function createServerOrder({
   return { data, error };
 }
 
+export async function reviewManualPayment({
+  orderId,
+  action,
+  adminNotes = "",
+  rejectionReason = "",
+}) {
+  const { data, error } = await supabase.functions.invoke("review-manual-payment", {
+    body: {
+      order_id: orderId,
+      action,
+      admin_notes: adminNotes,
+      rejection_reason: rejectionReason,
+    },
+  });
+
+  return { data, error };
+}
+
 /**
  * Create a new order
  */
