@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
+import { productTypeLabel as formatProductTypeLabel } from "../lib/productTypes";
 
 const AppContext = createContext();
 
@@ -122,6 +123,11 @@ const translations = {
       "Start by choosing an Excel product. You can review delivery and payment details before submitting your order.",
     selectedProduct: "Selected product",
     productTypes: {
+      digital_download: "Digital Download",
+      saas_product: "SaaS Product",
+      desktop_app: "Desktop Software",
+      custom_service: "Custom Service",
+      free_product: "Free Product",
       system: "System",
       template: "Template",
       bundle: "Bundle",
@@ -310,7 +316,7 @@ export function AppProvider({ children }) {
   }
 
   function productTypeLabel(type) {
-    return translations[language].productTypes?.[type] || type || translations[language].product;
+    return translations[language].productTypes?.[type] || formatProductTypeLabel(type) || translations[language].product;
   }
 
   function categoryLabel(category) {

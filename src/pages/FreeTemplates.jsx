@@ -12,7 +12,7 @@ function FreeTemplates() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getProducts({ productType: "free" }).then(({ data }) => {
+    getProducts({ productType: "free_product" }).then(({ data }) => {
       setProducts(data || []);
       setLoading(false);
     });
@@ -55,7 +55,7 @@ function FreeTemplates() {
         ) : (
           <div className="products-grid">
             {products.map((product) => (
-              <ProductCard key={product.id} id={product.slug || product.id} title={product.title} description={product.description || product.short_description} price={product.price} oldPrice={product.old_price} currency={product.currency} category={product.category} tags={Array.isArray(product.tags) ? product.tags : []} featured={product.featured} image={product.cover_image_url || product.image_url || ""} productType={product.product_type} />
+              <ProductCard key={product.id} product={product} id={product.slug || product.id} title={product.title} description={product.description || product.short_description} price={product.price} oldPrice={product.old_price} currency={product.currency} category={product.category} tags={Array.isArray(product.tags) ? product.tags : []} featured={product.featured} image={product.cover_image_url || product.image_url || ""} productType={product.product_type} />
             ))}
           </div>
         )}

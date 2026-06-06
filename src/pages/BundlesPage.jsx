@@ -5,6 +5,7 @@ import ProductCard from "../components/ProductCard";
 import { getProducts } from "../lib/productService";
 import { useAppContext } from "../context/AppContext";
 import { LoadingSkeleton } from "../components/ui";
+import { normalizeProductType } from "../lib/productTypes";
 
 function BundlesPage() {
   const { tx, t } = useAppContext();
@@ -18,7 +19,7 @@ function BundlesPage() {
     });
   }, []);
 
-  const actualBundles = products.filter((product) => product.product_type === "bundle");
+  const actualBundles = products.filter((product) => normalizeProductType(product.product_type) === "bundle");
   const curatedBundles = useMemo(() => {
     const byCategory = (name) => products.filter((product) => product.category === name).slice(0, 3);
     return [
@@ -68,7 +69,7 @@ function BundlesPage() {
         ) : actualBundles.length > 0 ? (
           <div className="products-grid">
             {actualBundles.map((product) => (
-              <ProductCard key={product.id} id={product.slug || product.id} title={product.title} description={product.description || product.short_description} price={product.price} oldPrice={product.old_price} currency={product.currency} category={product.category} tags={Array.isArray(product.tags) ? product.tags : []} featured={product.featured} image={product.cover_image_url || product.image_url || ""} productType={product.product_type} />
+              <ProductCard key={product.id} product={product} id={product.slug || product.id} title={product.title} description={product.description || product.short_description} price={product.price} oldPrice={product.old_price} currency={product.currency} category={product.category} tags={Array.isArray(product.tags) ? product.tags : []} featured={product.featured} image={product.cover_image_url || product.image_url || ""} productType={product.product_type} />
             ))}
           </div>
         ) : (

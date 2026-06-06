@@ -3,16 +3,30 @@ import { supabase } from "../lib/supabase";
 import PageWrapper from "../components/PageWrapper";
 import { useToast } from "../context/ToastContext";
 import { useAppContext } from "../context/AppContext";
+import { PRODUCT_TYPE_OPTIONS, normalizeProductType } from "../lib/productTypes";
 
 const initialFormData = {
   title: "",
+  slug: "",
   description: "",
   long_description: "",
   price: "",
   old_price: "",
+  sale_price: "",
   currency: "EGP",
   category: "",
+  product_type: "digital_download",
+  status: "published",
+  visibility: "public",
+  sort_order: "0",
+  features_text: "",
   tags_text: "",
+  compatibility: "",
+  version: "",
+  roadmap_status: "",
+  system_requirements: "",
+  cta_label: "",
+  cta_url: "",
   featured: false,
 };
 
@@ -33,6 +47,13 @@ function AdminProducts() {
   function parseTags(value) {
     return String(value || "")
       .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
+  function parseLines(value) {
+    return String(value || "")
+      .split("\n")
       .map((item) => item.trim())
       .filter(Boolean);
   }
@@ -95,13 +116,26 @@ function AdminProducts() {
 
     setFormData({
       title: product.title || "",
+      slug: product.slug || "",
       description: product.description || "",
       long_description: product.long_description || "",
       price: product.price ?? "",
       old_price: product.old_price ?? "",
+      sale_price: product.sale_price ?? "",
       currency: product.currency || "EGP",
       category: product.category || "",
+      product_type: normalizeProductType(product.product_type),
+      status: product.status || "published",
+      visibility: product.visibility || "public",
+      sort_order: product.sort_order ?? "0",
+      features_text: Array.isArray(product.features) ? product.features.join("\n") : "",
       tags_text: Array.isArray(product.tags) ? product.tags.join(", ") : "",
+      compatibility: product.compatibility || "",
+      version: product.version || "",
+      roadmap_status: product.roadmap_status || "",
+      system_requirements: product.system_requirements || "",
+      cta_label: product.cta_label || "",
+      cta_url: product.cta_url || "",
       featured: Boolean(product.featured),
     });
 
@@ -156,18 +190,21 @@ function AdminProducts() {
 
   async function handleSubmit(e) {
     e.preventDefault();
+    const normalizedType = normalizeProductType(formData.product_type);
+    const shouldForceFree = normalizedType === "free_product";
+    const shouldHaveDownloadFile = normalizedType === "digital_download";
 
     if (!formData.title.trim()) {
       showToast(tx("Title is required.", "العنوان مطلوب."), "error");
       return;
     }
 
-    if (!String(formData.price).trim()) {
+    if (!String(formData.price).trim() && !shouldForceFree) {
       showToast(tx("Price is required.", "السعر مطلوب."), "error");
       return;
     }
 
-    if (Number(formData.price) < 0) {
+    if (Number(formData.price || 0) < 0) {
       showToast(tx("Price cannot be negative.", "السعر لا يمكن أن يكون سالبًا."), "error");
       return;
     }
@@ -180,7 +217,12 @@ function AdminProducts() {
       return;
     }
 
-    if (!editingProductId && !productFile) {
+    if (formData.sale_price !== "" && Number(formData.sale_price) < 0) {
+      showToast("Sale price cannot be negative.", "error");
+      return;
+    }
+
+    if (!editingProductId && shouldHaveDownloadFile && !productFile) {
       showToast(tx("Please upload the product file.", "من فضلك ارفع ملف المنتج."), "error");
       return;
     }
@@ -226,14 +268,29 @@ function AdminProducts() {
 
       const payload = {
         title: formData.title.trim(),
+        slug: formData.slug.trim() || null,
         description: formData.description.trim(),
+        short_description: formData.description.trim(),
         long_description: formData.long_description.trim(),
-        price: Number(formData.price),
+        price: shouldForceFree ? 0 : Number(formData.price || 0),
         old_price:
           String(formData.old_price).trim() === "" ? null : Number(formData.old_price),
+        sale_price:
+          shouldForceFree || String(formData.sale_price).trim() === "" ? null : Number(formData.sale_price),
         currency: formData.currency.trim() || "EGP",
         category: formData.category.trim() || null,
+        product_type: normalizedType,
+        status: formData.status,
+        visibility: formData.visibility,
+        sort_order: Number(formData.sort_order || 0),
         tags: parseTags(formData.tags_text),
+        features: parseLines(formData.features_text),
+        compatibility: formData.compatibility.trim() || null,
+        version: formData.version.trim() || null,
+        roadmap_status: formData.roadmap_status.trim() || null,
+        system_requirements: formData.system_requirements.trim() || null,
+        cta_label: formData.cta_label.trim() || null,
+        cta_url: formData.cta_url.trim() || null,
         featured: Boolean(formData.featured),
         cover_image_path: coverImagePath,
         cover_image_url: coverImageUrl,
@@ -339,6 +396,39 @@ function AdminProducts() {
             </div>
 
             <div className="form-group">
+              <label>Slug</label>
+              <input type="text" name="slug" value={formData.slug} onChange={handleChange} placeholder="optional-product-slug" />
+            </div>
+
+            <div className="form-group">
+              <label>Product Type</label>
+              <select name="product_type" value={formData.product_type} onChange={handleChange}>
+                {PRODUCT_TYPE_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+              <small>SaaS and desktop products are request-demo catalog entries only in this patch.</small>
+            </div>
+
+            <div className="form-group">
+              <label>Status</label>
+              <select name="status" value={formData.status} onChange={handleChange}>
+                <option value="draft">Draft</option>
+                <option value="published">Published</option>
+                <option value="archived">Archived</option>
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label>Visibility</label>
+              <select name="visibility" value={formData.visibility} onChange={handleChange}>
+                <option value="public">Public</option>
+                <option value="hidden">Hidden</option>
+                <option value="private">Private</option>
+              </select>
+            </div>
+
+            <div className="form-group">
               <label>{tx("Short Description", "وصف مختصر")}</label>
               <textarea
                 rows="3"
@@ -367,7 +457,6 @@ function AdminProducts() {
                 name="price"
                 value={formData.price}
                 onChange={handleChange}
-                required
               />
             </div>
 
@@ -417,6 +506,51 @@ function AdminProducts() {
                   "اكتب الوسوم مفصولة بفاصلة"
                 )}
               />
+            </div>
+
+            <div className="form-group">
+              <label>Sale Price</label>
+              <input type="number" min="0" step="0.01" name="sale_price" value={formData.sale_price} onChange={handleChange} placeholder="Optional" />
+            </div>
+
+            <div className="form-group">
+              <label>Sort Order</label>
+              <input type="number" name="sort_order" value={formData.sort_order} onChange={handleChange} />
+            </div>
+
+            <div className="form-group">
+              <label>Features</label>
+              <textarea rows="5" name="features_text" value={formData.features_text} onChange={handleChange} placeholder="One feature per line" />
+            </div>
+
+            <div className="form-group">
+              <label>Version</label>
+              <input name="version" value={formData.version} onChange={handleChange} />
+            </div>
+
+            <div className="form-group">
+              <label>Compatibility</label>
+              <input name="compatibility" value={formData.compatibility} onChange={handleChange} placeholder="Excel 2016+, Windows 10+, Browser, etc." />
+            </div>
+
+            <div className="form-group">
+              <label>Roadmap Status</label>
+              <input name="roadmap_status" value={formData.roadmap_status} onChange={handleChange} placeholder="Coming soon, Request demo, Available by request" />
+            </div>
+
+            <div className="form-group">
+              <label>System Requirements</label>
+              <textarea rows="3" name="system_requirements" value={formData.system_requirements} onChange={handleChange} />
+            </div>
+
+            <div className="form-group">
+              <label>CTA Label</label>
+              <input name="cta_label" value={formData.cta_label} onChange={handleChange} placeholder="Request demo, Contact sales, Request quote" />
+            </div>
+
+            <div className="form-group">
+              <label>CTA URL</label>
+              <input name="cta_url" value={formData.cta_url} onChange={handleChange} placeholder="/custom-request or /contact" />
             </div>
 
             <div className="form-group">
@@ -523,6 +657,10 @@ function AdminProducts() {
                 <p>
                   <strong>{tx("Price:", "السعر:")}</strong> {product.price} {product.currency}
                 </p>
+
+                <p><strong>Type:</strong> {normalizeProductType(product.product_type)}</p>
+                <p><strong>Status:</strong> {product.status || "published"} / {product.visibility || "public"}</p>
+                {product.roadmap_status ? <p><strong>Roadmap:</strong> {product.roadmap_status}</p> : null}
 
                 {product.old_price ? (
                   <p>

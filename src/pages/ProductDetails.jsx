@@ -5,6 +5,7 @@ import ProductCard from "../components/ProductCard";
 import { getProductById, getProductBySlug, getRelatedProducts } from "../lib/productService";
 import { formatPrice } from "../lib/utils";
 import { useAppContext } from "../context/AppContext";
+import { isCheckoutProduct, isFreeProduct, isRoadmapProduct, normalizeProductType, productPrimaryAction } from "../lib/productTypes";
 
 function asArray(value, fallback = []) {
   return Array.isArray(value) && value.length ? value : fallback;
@@ -102,7 +103,11 @@ function ProductDetails() {
   }
 
   const price = product.sale_price || product.price || 0;
-  const isFree = Number(price || 0) === 0 || product.product_type === "free";
+  const normalizedType = normalizeProductType(product.product_type);
+  const isFree = isFreeProduct(product);
+  const canCheckout = isCheckoutProduct(product) && !isFree;
+  const isRoadmap = isRoadmapProduct(product);
+  const primaryAction = productPrimaryAction(product);
   const displayPrice = isFree ? t.free : formatPrice(price, product.currency);
   const features = asArray(product.features, [
     tx("Editable Excel workbook", "ملف Excel قابل للتعديل"),
@@ -158,9 +163,11 @@ function ProductDetails() {
           <aside className="purchase-panel">
             <div className="details-meta">
               {product.featured && <span className="details-chip details-chip-primary">{t.featured}</span>}
-              <span className="details-chip">{categoryLabel(product.category || "Excel System")}</span>
+              <span className="details-chip">{categoryLabel(product.category || "Smart Flow Hub")}</span>
+              <span className="details-chip">{t.productTypes?.[normalizedType] || normalizedType}</span>
+              {product.roadmap_status && <span className="details-chip">{product.roadmap_status}</span>}
               <span className="details-chip">v{product.version || "1.0"}</span>
-              <span className="details-chip">{product.compatibility || "Excel 2016+"}</span>
+              <span className="details-chip">{product.compatibility || (normalizedType === "desktop_app" ? "Requirements pending" : "Catalog foundation")}</span>
             </div>
             <h1>{product.title}</h1>
             <p className="details-description">{product.long_description || product.description || product.short_description}</p>
@@ -169,7 +176,7 @@ function ProductDetails() {
               {product.old_price && <span className="details-old-price">{formatPrice(product.old_price, product.currency)}</span>}
             </div>
             <div className="details-actions">
-              <Link to={`/checkout/${product.slug || product.id}`} className="primary-link-btn">{isFree ? t.downloadFree : t.buyNow}</Link>
+              <Link to={primaryAction.to} className="primary-link-btn">{canCheckout ? t.buyNow : primaryAction.label}</Link>
               <Link to="/custom-request" className="secondary-link-btn">{t.requestCustomization}</Link>
             </div>
             {isFree && (
@@ -177,8 +184,21 @@ function ProductDetails() {
                 {tx("Create a free account to save downloads in your customer portal.", "أنشئ حسابًا مجانيًا لحفظ التحميلات داخل بوابة العميل.")}
               </p>
             )}
+            {isFree && (
+              <p className="form-hint">
+                {tx("Free download automation is not expanded in this patch; use contact/request flow if direct access is not available yet.", "لم يتم توسيع أتمتة التحميل المجاني في هذا التحديث؛ استخدم التواصل أو الطلب إذا لم يكن الوصول المباشر متاحًا بعد.")}
+              </p>
+            )}
+            {isRoadmap && (
+              <p className="form-hint">
+                {tx("Subscriptions, desktop activation, device management, and automated provisioning are not implemented yet.", "الاشتراكات وتفعيل سطح المكتب وإدارة الأجهزة والتجهيز الآلي غير مطبقة بعد.")}
+              </p>
+            )}
             <div className="trust-list">
-              {[t.secureDelivery, t.licenseIncluded, t.supportAvailable, t.customizable].map((item) => <span className="trust-pill" key={item}>{item}</span>)}
+              {(canCheckout
+                ? [t.secureDelivery, tx("Manual payment confirmation", "تأكيد دفع يدوي"), t.supportAvailable, t.customizable]
+                : [tx("Request/demo flow", "مسار طلب أو عرض"), tx("No subscription automation", "لا توجد أتمتة اشتراك"), tx("No device activation", "لا يوجد تفعيل أجهزة"), t.supportAvailable]
+              ).map((item) => <span className="trust-pill" key={item}>{item}</span>)}
             </div>
           </aside>
         </div>
@@ -200,6 +220,14 @@ function ProductDetails() {
             )}
           </p>
           <h2>{tx("FAQ", "الأسئلة الشائعة")}</h2>
+          {!canCheckout && (
+            <p className="details-description">
+              {tx(
+                "For this product type, checkout, subscriptions, provisioning, desktop license activation, and device activation are not available in the current build.",
+                "لهذا النوع من المنتجات، الشراء والاشتراكات والتجهيز وتفعيل تراخيص سطح المكتب وتفعيل الأجهزة غير متاحة في النسخة الحالية."
+              )}
+            </p>
+          )}
           <div className="faq-list">{faqs.map((item) => <div className="faq-item" key={item.q || item.question}><strong>{item.q || item.question}</strong><p>{item.a || item.answer}</p></div>)}</div>
         </div>
 

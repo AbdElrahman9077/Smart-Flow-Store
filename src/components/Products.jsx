@@ -2,10 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import ProductCard from "./ProductCard";
 import { getProducts } from "../lib/productService";
+import { PRODUCT_TYPES, normalizeProductType } from "../lib/productTypes";
 import { StaggerContainer, StaggerItem, SlideUp } from "./animations";
 import { useAppContext } from "../context/AppContext";
 
-const productTypes = ["all", "system", "template", "bundle", "service", "free"];
+const productTypes = ["all", ...PRODUCT_TYPES];
 
 function Products({ featuredOnly = false, showHeader = true, limit = null }) {
   const { slug } = useParams();
@@ -34,7 +35,7 @@ function Products({ featuredOnly = false, showHeader = true, limit = null }) {
   const filtered = products.filter((product) => {
     const text = `${product.title} ${product.description || ""} ${product.short_description || ""} ${(product.tags || []).join(" ")}`.toLowerCase();
     const matchesSearch = !search || text.includes(search.toLowerCase());
-    const matchesType = type === "all" || product.product_type === type;
+    const matchesType = type === "all" || normalizeProductType(product.product_type) === type;
     const effectivePrice = Number(product.sale_price || product.price || 0);
     const matchesPrice = price === "all" || (price === "free" && effectivePrice === 0) || (price === "paid" && effectivePrice > 0) || (price === "sale" && product.sale_price);
     const matchesCategory = !activeCategory || String(product.category || "").toLowerCase().replace(/&/g, "and").includes(activeCategory);
@@ -90,7 +91,7 @@ function Products({ featuredOnly = false, showHeader = true, limit = null }) {
           <StaggerContainer className="products-grid">
             {filtered.map((product) => (
               <StaggerItem key={product.id}>
-              <ProductCard key={product.id} id={product.slug || product.id} title={product.title} description={product.short_description || product.description} price={product.sale_price || product.price} oldPrice={product.old_price || product.price} currency={product.currency} category={product.category} tags={Array.isArray(product.tags) ? product.tags : []} featured={product.featured} productType={product.product_type} compatibility={product.compatibility} version={product.version} image={product.cover_image_url || product.image_urls?.[0] || product.image_url || ""} />
+              <ProductCard key={product.id} product={product} id={product.slug || product.id} title={product.title} description={product.short_description || product.description} price={product.sale_price || product.price} oldPrice={product.old_price || product.price} currency={product.currency} category={product.category} tags={Array.isArray(product.tags) ? product.tags : []} featured={product.featured} productType={product.product_type} compatibility={product.compatibility} version={product.version} image={product.cover_image_url || product.image_urls?.[0] || product.image_url || ""} />
               </StaggerItem>
             ))}
           </StaggerContainer>

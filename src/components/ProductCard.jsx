@@ -2,8 +2,10 @@ import { Link } from "react-router-dom";
 import { motion as Motion, useReducedMotion } from "framer-motion";
 import { formatPrice } from "../lib/utils";
 import { useAppContext } from "../context/AppContext";
+import { isCheckoutProduct, isFreeProduct, isRoadmapProduct, normalizeProductType, productPrimaryAction } from "../lib/productTypes";
 
 function ProductCard({
+  product,
   id,
   title,
   description,
@@ -21,8 +23,13 @@ function ProductCard({
   const reduce = useReducedMotion();
   const { t, categoryLabel, productTypeLabel } = useAppContext();
   const shortDescription = description && description.length > 118 ? `${description.slice(0, 118)}...` : description || "No description available yet.";
-  const isFree = Number(price || 0) === 0 || productType === "free";
-  const primaryLabel = isFree ? t.downloadFree : t.buyNow;
+  const cardProduct = product || { id, slug: id, product_type: productType, price };
+  const normalizedType = normalizeProductType(productType);
+  const isFree = isFreeProduct(cardProduct);
+  const canCheckout = isCheckoutProduct(cardProduct) && !isFree;
+  const isRoadmap = isRoadmapProduct(cardProduct);
+  const action = productPrimaryAction(cardProduct);
+  const primaryLabel = action.kind === "checkout" ? t.buyNow : action.label;
   const displayPrice = isFree ? t.free : formatPrice(price, currency);
 
   return (
@@ -40,15 +47,16 @@ function ProductCard({
       transition={{ type: "spring", stiffness: 260, damping: 22 }}
     >
       <div className="product-card-media">
-        {image ? <img src={image} alt={title} className="product-image" /> : <div className="product-card-placeholder">Excel product</div>}
+        {image ? <img src={image} alt={title} className="product-image" /> : <div className="product-card-placeholder">Product preview</div>}
         {featured && <span className="featured-badge">{t.featured}</span>}
         {isFree && <span className="free-badge">{t.free}</span>}
+        {isRoadmap && <span className="free-badge">Coming soon</span>}
       </div>
 
       <div className="product-card-body">
         <div className="product-card-topline">
           {category && <span className="product-card-category">{categoryLabel(category)}</span>}
-          <span className="rating-chip">{isFree ? t.getTemplate : t.licenseIncluded}</span>
+          <span className="rating-chip">{canCheckout ? t.secureDelivery : action.label}</span>
         </div>
         <h3 className="product-card-title">{title}</h3>
         <p className="product-card-desc">{shortDescription}</p>
@@ -57,19 +65,19 @@ function ProductCard({
           {oldPrice && Number(oldPrice) > Number(price) ? <span className="old-price">{formatPrice(oldPrice, currency)}</span> : null}
         </div>
         <div className="card-tags">
-          <span className="tag-chip">{productTypeLabel(productType)}</span>
+          <span className="tag-chip">{productTypeLabel(normalizedType)}</span>
           {compatibility && <span className="tag-chip">{compatibility}</span>}
           {version && <span className="tag-chip">v{version}</span>}
           {tags.slice(0, 2).map((tag, index) => <span key={`${tag}-${index}`} className="tag-chip">{tag}</span>)}
         </div>
         <div className="proof-chip-row">
-          <span>{t.secureDelivery}</span>
-          <span>{t.supportAvailable}</span>
-          <span>{t.customizable}</span>
+          <span>{canCheckout ? t.secureDelivery : "Request/demo flow"}</span>
+          <span>{isRoadmap ? "Roadmap" : t.supportAvailable}</span>
+          <span>{normalizedType === "desktop_app" ? "No activation yet" : t.customizable}</span>
         </div>
         <div className="card-footer">
           <Link to={`/products/${id}`} className="card-link-btn">{t.viewDetails}</Link>
-          <Link to={`/checkout/${id}`} className="primary-link-btn">{primaryLabel}</Link>
+          <Link to={action.to} className="primary-link-btn">{primaryLabel}</Link>
           <Link to="/custom-request" className="secondary-link-btn">{t.customize}</Link>
         </div>
       </div>
