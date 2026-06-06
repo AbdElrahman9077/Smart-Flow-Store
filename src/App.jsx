@@ -9,6 +9,7 @@ import CustomerRoute from "./components/CustomerRoute";
 import AdminLayout from "./components/AdminLayout";
 import AccountLayout from "./components/AccountLayout";
 import PageLoadingSpinner from "./components/PageLoadingSpinner";
+import { ADMIN_ROUTE_PERMISSIONS } from "./lib/adminRbac";
 
 // ── Home components (eagerly loaded)
 import Hero from "./components/Hero";
@@ -69,8 +70,8 @@ function withAccountLayout(page) {
   return <CustomerRoute><AccountLayout>{page}</AccountLayout></CustomerRoute>;
 }
 
-function withAdminLayout(page) {
-  return <AdminRoute><AdminLayout>{page}</AdminLayout></AdminRoute>;
+function withAdminLayout(page, permission) {
+  return <AdminRoute requiredPermission={permission}><AdminLayout>{page}</AdminLayout></AdminRoute>;
 }
 
 function HomePage() {
@@ -213,19 +214,19 @@ function AnimatedRoutes() {
 
           {/* ─── Admin Routes ─── */}
           <Route path="/admin" element={<AdminRoute><Navigate to="/admin/dashboard" replace /></AdminRoute>} />
-          <Route path="/admin/dashboard" element={withAdminLayout(<AdminDashboard />)} />
-          <Route path="/admin/products" element={withAdminLayout(<AdminProducts />)} />
-          <Route path="/admin/orders" element={withAdminLayout(<AdminOrders />)} />
-          <Route path="/admin/customers" element={withAdminLayout(<AdminUsers />)} />
-          <Route path="/admin/users" element={withAdminLayout(<AdminUsers />)} />
-          <Route path="/admin/licenses" element={withAdminLayout(<AdminLicenses />)} />
-          <Route path="/admin/downloads" element={withAdminLayout(<AdminDownloads />)} />
-          <Route path="/admin/coupons" element={withAdminLayout(<AdminCoupons />)} />
-          <Route path="/admin/custom-requests" element={withAdminLayout(<AdminCustomRequests />)} />
-          <Route path="/admin/support" element={withAdminLayout(<AdminSupport />)} />
-          <Route path="/admin/reviews" element={withAdminLayout(<AdminReviews />)} />
-          <Route path="/admin/logs" element={withAdminLayout(<AdminLogs />)} />
-          <Route path="/admin/settings" element={withAdminLayout(<AdminSettings />)} />
+          <Route path="/admin/dashboard" element={withAdminLayout(<AdminDashboard />, ADMIN_ROUTE_PERMISSIONS["/admin/dashboard"])} />
+          <Route path="/admin/products" element={withAdminLayout(<AdminProducts />, ADMIN_ROUTE_PERMISSIONS["/admin/products"])} />
+          <Route path="/admin/orders" element={withAdminLayout(<AdminOrders />, ADMIN_ROUTE_PERMISSIONS["/admin/orders"])} />
+          <Route path="/admin/customers" element={withAdminLayout(<AdminUsers />, ADMIN_ROUTE_PERMISSIONS["/admin/customers"])} />
+          <Route path="/admin/users" element={withAdminLayout(<AdminUsers />, ADMIN_ROUTE_PERMISSIONS["/admin/users"])} />
+          <Route path="/admin/licenses" element={withAdminLayout(<AdminLicenses />, ADMIN_ROUTE_PERMISSIONS["/admin/licenses"])} />
+          <Route path="/admin/downloads" element={withAdminLayout(<AdminDownloads />, ADMIN_ROUTE_PERMISSIONS["/admin/downloads"])} />
+          <Route path="/admin/coupons" element={withAdminLayout(<AdminCoupons />, ADMIN_ROUTE_PERMISSIONS["/admin/coupons"])} />
+          <Route path="/admin/custom-requests" element={withAdminLayout(<AdminCustomRequests />, ADMIN_ROUTE_PERMISSIONS["/admin/custom-requests"])} />
+          <Route path="/admin/support" element={withAdminLayout(<AdminSupport />, ADMIN_ROUTE_PERMISSIONS["/admin/support"])} />
+          <Route path="/admin/reviews" element={withAdminLayout(<AdminReviews />, ADMIN_ROUTE_PERMISSIONS["/admin/reviews"])} />
+          <Route path="/admin/logs" element={withAdminLayout(<AdminLogs />, ADMIN_ROUTE_PERMISSIONS["/admin/logs"])} />
+          <Route path="/admin/settings" element={withAdminLayout(<AdminSettings />, ADMIN_ROUTE_PERMISSIONS["/admin/settings"])} />
           <Route path="/admin-dashboard" element={<AdminRoute><Navigate to="/admin/dashboard" replace /></AdminRoute>} />
           <Route path="/admin-products" element={<AdminRoute><Navigate to="/admin/products" replace /></AdminRoute>} />
           <Route path="/admin-orders" element={<AdminRoute><Navigate to="/admin/orders" replace /></AdminRoute>} />
@@ -240,7 +241,7 @@ function AnimatedRoutes() {
           <Route path="/admin-settings" element={<AdminRoute><Navigate to="/admin/settings" replace /></AdminRoute>} />
 
           {/* ─── Legacy Admin Routes (preserved) ─── */}
-          <Route path="/orders" element={<AdminRoute><OrdersPage /></AdminRoute>} />
+          <Route path="/orders" element={<AdminRoute requiredPermission="orders.view"><OrdersPage /></AdminRoute>} />
 
           {/* ─── Error Routes ─── */}
           <Route path="/unauthorized" element={<Unauthorized />} />

@@ -1,11 +1,16 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
+import { can, canAll, canAny, mergePermissions, normalizeAdminRole } from "../lib/adminRbac";
 
 function useAdmin() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
+  const [adminRecord, setAdminRecord] = useState(null);
+  const [role, setRole] = useState("customer");
+  const [permissions, setPermissions] = useState([]);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   const loadUserAndProfile = useCallback(async () => {
     setLoading(true);
@@ -18,7 +23,11 @@ function useAdmin() {
     if (userError || !currentUser) {
       setUser(null);
       setProfile(null);
+      setAdminRecord(null);
+      setRole("customer");
+      setPermissions([]);
       setIsAdmin(false);
+      setIsSuperAdmin(false);
       setLoading(false);
       return;
     }
@@ -33,13 +42,32 @@ function useAdmin() {
 
     if (profileError || !profileData) {
       setProfile(null);
+      setAdminRecord(null);
+      setRole("customer");
+      setPermissions([]);
       setIsAdmin(false);
+      setIsSuperAdmin(false);
       setLoading(false);
       return;
     }
 
+    const { data: adminData } = await supabase
+      .from("admin_users")
+      .select("id, user_id, role, permissions, status")
+      .eq("user_id", currentUser.id)
+      .maybeSingle();
+
+    const nextRole = normalizeAdminRole(adminData?.role, profileData);
+    const nextStatus = adminData?.status || profileData.status || "active";
+    const nextPermissions = mergePermissions(nextRole, adminData?.permissions);
+    const nextIsAdmin = nextStatus !== "suspended" && nextRole !== "customer";
+
     setProfile(profileData);
-    setIsAdmin(profileData.status !== "suspended" && (profileData.is_admin === true || profileData.role === "admin"));
+    setAdminRecord(adminData || null);
+    setRole(nextRole);
+    setPermissions(nextPermissions);
+    setIsAdmin(nextIsAdmin);
+    setIsSuperAdmin(nextIsAdmin && nextRole === "super_admin");
     setLoading(false);
   }, []);
 
@@ -61,7 +89,15 @@ function useAdmin() {
     loading,
     user,
     profile,
+    adminRecord,
+    role,
+    status: adminRecord?.status || profile?.status || "active",
+    permissions,
     isAdmin,
+    isSuperAdmin,
+    hasPermission: (permission) => can(permissions, permission),
+    hasAnyPermission: (items) => canAny(permissions, items),
+    hasAllPermissions: (items) => canAll(permissions, items),
     refreshAdmin: loadUserAndProfile,
   };
 }

@@ -4,11 +4,12 @@ import { useEffect, useMemo, useState } from "react";
 import { signOutUser } from "../lib/auth";
 import { useAppContext } from "../context/AppContext";
 import useAdmin from "../hooks/useAdmin";
+import { ADMIN_ROUTE_PERMISSIONS } from "../lib/adminRbac";
 
 function Navbar() {
   const navigate = useNavigate();
   const { t, toggleLanguage, language, toggleTheme, theme } = useAppContext();
-  const { user, isAdmin, loading } = useAdmin();
+  const { user, isAdmin, loading, hasPermission } = useAdmin();
   const { scrollY } = useScroll();
   const reduce = useReducedMotion();
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -24,19 +25,19 @@ function Navbar() {
   ], [t]);
 
   const adminLinks = useMemo(() => [
-    ["/admin/dashboard", t.adminDashboard],
-    ["/admin/products", t.adminProducts],
-    ["/admin/orders", t.adminOrders],
-    ["/admin/customers", t.adminUsers],
-    ["/admin/licenses", t.adminLicenses],
-    ["/admin/downloads", t.adminDownloads],
-    ["/admin/coupons", t.adminCoupons],
-    ["/admin/custom-requests", t.adminCustomRequests],
-    ["/admin/support", t.adminSupport],
-    ["/admin/reviews", t.adminReviews],
-    ["/admin/logs", t.adminLogs],
-    ["/admin/settings", t.adminSettings],
-  ], [t]);
+    ["/admin/dashboard", t.adminDashboard, ADMIN_ROUTE_PERMISSIONS["/admin/dashboard"]],
+    ["/admin/products", t.adminProducts, ADMIN_ROUTE_PERMISSIONS["/admin/products"]],
+    ["/admin/orders", t.adminOrders, ADMIN_ROUTE_PERMISSIONS["/admin/orders"]],
+    ["/admin/customers", t.adminUsers, ADMIN_ROUTE_PERMISSIONS["/admin/customers"]],
+    ["/admin/licenses", t.adminLicenses, ADMIN_ROUTE_PERMISSIONS["/admin/licenses"]],
+    ["/admin/downloads", t.adminDownloads, ADMIN_ROUTE_PERMISSIONS["/admin/downloads"]],
+    ["/admin/coupons", t.adminCoupons, ADMIN_ROUTE_PERMISSIONS["/admin/coupons"]],
+    ["/admin/custom-requests", t.adminCustomRequests, ADMIN_ROUTE_PERMISSIONS["/admin/custom-requests"]],
+    ["/admin/support", t.adminSupport, ADMIN_ROUTE_PERMISSIONS["/admin/support"]],
+    ["/admin/reviews", t.adminReviews, ADMIN_ROUTE_PERMISSIONS["/admin/reviews"]],
+    ["/admin/logs", t.adminLogs, ADMIN_ROUTE_PERMISSIONS["/admin/logs"]],
+    ["/admin/settings", t.adminSettings, ADMIN_ROUTE_PERMISSIONS["/admin/settings"]],
+  ].filter(([, , permission]) => hasPermission(permission)), [t, hasPermission]);
 
   async function handleLogout() {
     await signOutUser();

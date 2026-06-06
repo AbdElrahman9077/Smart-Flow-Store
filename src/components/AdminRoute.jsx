@@ -1,8 +1,8 @@
 import { Navigate } from "react-router-dom";
 import useAdmin from "../hooks/useAdmin";
 
-function AdminRoute({ children }) {
-  const { loading, user, isAdmin } = useAdmin();
+function AdminRoute({ children, requiredPermission = null }) {
+  const { loading, user, isAdmin, status, hasPermission } = useAdmin();
 
   if (loading) {
     return (
@@ -24,7 +24,11 @@ function AdminRoute({ children }) {
     return <Navigate to="/login" replace />;
   }
 
-  if (!isAdmin) {
+  if (!isAdmin || status === "suspended") {
+    return <Navigate to="/unauthorized" replace />;
+  }
+
+  if (requiredPermission && !hasPermission(requiredPermission)) {
     return <Navigate to="/unauthorized" replace />;
   }
 
