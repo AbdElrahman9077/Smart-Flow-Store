@@ -25,7 +25,6 @@ const ProductsPage = lazy(() => import("./pages/ProductsPage"));
 const AboutPage = lazy(() => import("./pages/AboutPage"));
 const ContactPage = lazy(() => import("./pages/ContactPage"));
 const OrderSuccess = lazy(() => import("./pages/OrderSuccess"));
-const MyOrders = lazy(() => import("./pages/MyOrders"));
 const Login = lazy(() => import("./pages/Login"));
 const Register = lazy(() => import("./pages/Register"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
@@ -201,7 +200,7 @@ function AnimatedRoutes() {
           <Route path="/checkout" element={<CheckoutAccess />} />
           <Route path="/checkout/:id" element={<CustomerRoute fallback={<CheckoutAccess />}><Checkout /></CustomerRoute>} />
           <Route path="/order-success" element={<OrderSuccess />} />
-          <Route path="/my-orders" element={<CustomerRoute><MyOrders /></CustomerRoute>} />
+          <Route path="/my-orders" element={<CustomerRoute><Navigate to="/account/orders" replace /></CustomerRoute>} />
 
           {/* ─── Customer Portal (Account) ─── */}
           <Route path="/account" element={withAccountLayout(<AccountPage />)} />

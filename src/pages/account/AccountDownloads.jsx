@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import PageWrapper from "../../components/PageWrapper";
-import { getCurrentUser } from "../../lib/auth";
-import { getMyDownloadAccess, requestSecureDownload } from "../../lib/downloadService";
+import { requestSecureDownload } from "../../lib/downloadService";
+import { listCustomerDownloads } from "../../lib/customerAccountService";
 import { formatDate, formatPrice } from "../../lib/utils";
 
 function AccountDownloads() {
@@ -10,11 +10,8 @@ function AccountDownloads() {
 
   useEffect(() => {
     async function load() {
-      const user = await getCurrentUser();
-      if (user) {
-        const result = await getMyDownloadAccess(user.id);
-        setRows(result.data || []);
-      }
+      const result = await listCustomerDownloads();
+      setRows(result.data || []);
       setLoading(false);
     }
     load();

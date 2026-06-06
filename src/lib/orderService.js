@@ -1,6 +1,7 @@
 import { supabase } from "./supabase";
 import { generateLicenseKey, generateOrderNumber } from "./utils";
 import { logAction } from "./orderTools";
+import { getCurrentUser } from "./auth";
 
 /**
  * Order Service
@@ -75,11 +76,14 @@ export async function createOrder({
 /**
  * Get orders for a customer
  */
-export async function getMyOrders(userId) {
+export async function getMyOrders() {
+  const user = await getCurrentUser();
+  if (!user) return { data: [], error: "Authentication required" };
+
   const { data, error } = await supabase
     .from("orders")
     .select("*")
-    .eq("user_id", userId)
+    .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 
   return { data: data || [], error };

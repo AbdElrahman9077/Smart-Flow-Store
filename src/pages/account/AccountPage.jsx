@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { supabase } from "../../lib/supabase";
-import { getCurrentUser } from "../../lib/auth";
 import PageWrapper from "../../components/PageWrapper";
 import { useAppContext } from "../../context/AppContext";
 import { StatCard } from "../../components/ui";
+import { listCustomerLicenses, listCustomerOrders, listCustomerSupportTickets, requireCustomerSession } from "../../lib/customerAccountService";
 
 function AccountPage() {
   const { tx } = useAppContext();
@@ -14,20 +13,24 @@ function AccountPage() {
 
   useEffect(() => {
     async function load() {
-      const currentUser = await getCurrentUser();
-      if (!currentUser) return;
+      const session = await requireCustomerSession();
+      const currentUser = session.user;
+      if (!currentUser) {
+        setLoading(false);
+        return;
+      }
       setUser(currentUser);
 
       const [ordersRes, licensesRes, ticketsRes] = await Promise.allSettled([
-        supabase.from("orders").select("*", { count: "exact", head: true }).eq("user_id", currentUser.id),
-        supabase.from("licenses").select("*", { count: "exact", head: true }).eq("user_id", currentUser.id).eq("status", "active"),
-        supabase.from("support_tickets").select("*", { count: "exact", head: true }).eq("user_id", currentUser.id).eq("status", "open"),
+        listCustomerOrders(),
+        listCustomerLicenses(),
+        listCustomerSupportTickets(),
       ]);
 
       setStats({
-        orders: ordersRes.status === "fulfilled" ? ordersRes.value.count || 0 : 0,
-        licenses: licensesRes.status === "fulfilled" ? licensesRes.value.count || 0 : 0,
-        tickets: ticketsRes.status === "fulfilled" ? ticketsRes.value.count || 0 : 0,
+        orders: ordersRes.status === "fulfilled" ? ordersRes.value.data?.length || 0 : 0,
+        licenses: licensesRes.status === "fulfilled" ? (licensesRes.value.data || []).filter((license) => license.status === "active").length : 0,
+        tickets: ticketsRes.status === "fulfilled" ? (ticketsRes.value.data || []).filter((ticket) => ticket.status === "open").length : 0,
       });
       setLoading(false);
     }
@@ -76,6 +79,20 @@ function AccountPage() {
               <div className="account-menu-label">{item.label}</div>
               <div className="account-menu-sub">{item.sub}</div>
             </Link>
+          ))}
+        </div>
+
+        <div className="feature-card-grid" style={{ marginTop: 18 }}>
+          {[
+            ["My Subscriptions", "Coming soon. Subscription lifecycle is not implemented yet."],
+            ["My Devices", "Coming soon. Desktop device activation is not implemented yet."],
+            ["My Invoices", "Coming soon. Invoice generation is not implemented yet."],
+          ].map(([label, sub]) => (
+            <div className="feature-card" key={label}>
+              <span className="status-badge">Coming soon</span>
+              <div className="account-menu-label">{label}</div>
+              <div className="account-menu-sub">{sub}</div>
+            </div>
           ))}
         </div>
       </div>

@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import PageWrapper from "../../components/PageWrapper";
-import { getCurrentUser } from "../../lib/auth";
-import { createTicket, getMyTickets } from "../../lib/supportService";
+import { createCustomerSupportTicket, listCustomerSupportTickets, requireCustomerSession } from "../../lib/customerAccountService";
 import { formatDate } from "../../lib/utils";
 
 function AccountSupport() {
@@ -10,12 +9,10 @@ function AccountSupport() {
   const [form, setForm] = useState({ subject: "", message: "", priority: "normal" });
 
   async function load() {
-    const currentUser = await getCurrentUser();
-    setUser(currentUser);
-    if (currentUser) {
-      const result = await getMyTickets(currentUser.id);
-      setTickets(result.data || []);
-    }
+    const session = await requireCustomerSession();
+    setUser(session.user);
+    const result = await listCustomerSupportTickets();
+    setTickets(result.data || []);
   }
 
   useEffect(() => { load(); }, []);
@@ -23,7 +20,7 @@ function AccountSupport() {
   async function submit(event) {
     event.preventDefault();
     if (!user || !form.subject || !form.message) return;
-    await createTicket({ userId: user.id, ...form });
+    await createCustomerSupportTicket(form);
     setForm({ subject: "", message: "", priority: "normal" });
     load();
   }

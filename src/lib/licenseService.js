@@ -1,5 +1,6 @@
 import { supabase } from "./supabase";
 import { generateLicenseKey } from "./utils";
+import { getCurrentUser } from "./auth";
 
 /**
  * License Service
@@ -9,14 +10,17 @@ import { generateLicenseKey } from "./utils";
 /**
  * Get licenses for a user
  */
-export async function getMyLicenses(userId) {
+export async function getMyLicenses() {
+  const user = await getCurrentUser();
+  if (!user) return { data: [], error: "Authentication required" };
+
   const { data, error } = await supabase
     .from("licenses")
     .select(`
       *,
       products (id, title, cover_image_url, category)
     `)
-    .eq("user_id", userId)
+    .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 
   return { data: data || [], error };

@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import { getCurrentUser } from "./auth";
 
 export async function requestSecureDownload({ orderId, productId, licenseId }) {
   const { data, error } = await supabase.functions.invoke("secure-download", {
@@ -7,11 +8,14 @@ export async function requestSecureDownload({ orderId, productId, licenseId }) {
   return { data, error };
 }
 
-export async function getMyDownloadAccess(userId) {
+export async function getMyDownloadAccess() {
+  const user = await getCurrentUser();
+  if (!user) return { data: [], error: "Authentication required" };
+
   const { data, error } = await supabase
     .from("orders")
     .select("*, licenses (*), products:product_id (id, title, cover_image_url, file_storage_path, file_path, download_limit)")
-    .eq("user_id", userId)
+    .eq("user_id", user.id)
     .in("payment_status", ["confirmed"])
     .order("created_at", { ascending: false });
   return { data: data || [], error };

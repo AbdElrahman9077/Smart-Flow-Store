@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import PageWrapper from "../../components/PageWrapper";
-import { getCurrentUser } from "../../lib/auth";
-import { getMyCustomRequests } from "../../lib/customRequestService";
+import { listCustomerCustomRequests } from "../../lib/customerAccountService";
 import { formatDate, formatPrice } from "../../lib/utils";
 
 function AccountCustomRequests() {
@@ -11,11 +10,8 @@ function AccountCustomRequests() {
 
   useEffect(() => {
     async function load() {
-      const user = await getCurrentUser();
-      if (user) {
-        const result = await getMyCustomRequests(user.id);
-        setRequests(result.data || []);
-      }
+      const result = await listCustomerCustomRequests();
+      setRequests(result.data || []);
       setLoading(false);
     }
     load();
